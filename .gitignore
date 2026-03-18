@@ -1,0 +1,46 @@
+# Entornos — NUNCA commitear
+.env
+.env.local
+.env.production
+.env.staging
+.env.test.local
+
+# Next.js
+.next/
+out/
+build/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+dist/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Rust / Tauri
+target/
+src-tauri/target/
+
+# Testing
+coverage/
+
+# Logs
+*.log
+logs/
+.claude/logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/settings.json
+.idea/

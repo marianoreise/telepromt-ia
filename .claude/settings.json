@@ -1,0 +1,74 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "description": "Bloquear escritura en archivos .env",
+        "matcher": "Write|Edit",
+        "hooks": [{
+          "type": "command",
+          "command": "FILE=$(echo \"$CLAUDE_TOOL_INPUT\" | python -c \"import sys,json; d=json.load(sys.stdin); print(d.get('file_path',''))\" 2>/dev/null); if echo \"$FILE\" | grep -qE '\\.env(\\.local|\\.production|\\.staging)?$'; then echo '{\"decision\":\"block\",\"reason\":\"Modificacion de .env bloqueada. Confirmar con el humano primero.\"}'; exit 2; fi; exit 0",
+          "timeout": 5
+        }]
+      },
+      {
+        "description": "Bloquear comandos destructivos",
+        "matcher": "Bash",
+        "hooks": [{
+          "type": "command",
+          "command": "CMD=$(echo \"$CLAUDE_TOOL_INPUT\" | python -c \"import sys,json; d=json.load(sys.stdin); print(d.get('command',''))\" 2>/dev/null); if echo \"$CMD\" | grep -qE 'rm\\s+-rf\\s+/|DROP\\s+DATABASE|DELETE\\s+FROM\\s+\\w+\\s+WHERE\\s+1=1'; then echo '{\"decision\":\"block\",\"reason\":\"Comando destructivo bloqueado.\"}'; exit 2; fi; exit 0",
+          "timeout": 5
+        }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "description": "Auto-formatear TS y Python al guardar",
+        "matcher": "Write|Edit",
+        "hooks": [{
+          "type": "command",
+          "command": "FILE=$(echo \"$CLAUDE_TOOL_INPUT\" | python -c \"import sys,json; d=json.load(sys.stdin); print(d.get('file_path',''))\" 2>/dev/null); if echo \"$FILE\" | grep -qE '\\.(ts|tsx)$'; then npx prettier --write \"$FILE\" --log-level silent 2>/dev/null; elif echo \"$FILE\" | grep -qE '\\.py$'; then black --quiet \"$FILE\" 2>/dev/null; fi; exit 0",
+          "timeout": 20
+        }]
+      },
+      {
+        "description": "Detectar credenciales en archivos nuevos",
+        "matcher": "Write|Edit",
+        "hooks": [{
+          "type": "command",
+          "command": "FILE=$(echo \"$CLAUDE_TOOL_INPUT\" | python -c \"import sys,json; d=json.load(sys.stdin); print(d.get('file_path',''))\" 2>/dev/null); if [ -f \"$FILE\" ] && echo \"$FILE\" | grep -qE '\\.(ts|tsx|py)$'; then HITS=$(grep -cE 'sk-ant-[a-zA-Z0-9]+|sk-proj-[a-zA-Z0-9]+' \"$FILE\" 2>/dev/null || echo 0); if [ \"$HITS\" -gt 0 ] 2>/dev/null; then echo \"ALERTA: posibles credenciales en $FILE\"; fi; fi; exit 0",
+          "timeout": 5
+        }]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "description": "Inyectar estado del repo en cada prompt",
+        "hooks": [{
+          "type": "command",
+          "command": "echo '--- Estado del repo ---'; echo \"Branch: $(git branch --show-current 2>/dev/null)\"; echo \"Ultimo commit: $(git log --oneline -1 2>/dev/null)\"; echo \"Sin commit: $(git status --short 2>/dev/null | wc -l | tr -d ' ') archivos\"; echo '---'",
+          "timeout": 8
+        }]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "description": "Log de subagentes completados",
+        "hooks": [{
+          "type": "command",
+          "command": "mkdir -p .claude/logs; echo \"[$(date '+%Y-%m-%d %H:%M:%S')] Subagente completado\" >> .claude/logs/activity.log; exit 0",
+          "timeout": 5
+        }]
+      }
+    ],
+    "Stop": [
+      {
+        "description": "Recordar commit si hay cambios pendientes",
+        "hooks": [{
+          "type": "command",
+          "command": "N=$(git status --short 2>/dev/null | wc -l | tr -d ' '); if [ \"$N\" -gt 0 ] 2>/dev/null; then echo \"Recordatorio: $N archivo(s) sin commitear. Usa /git-workflow para el commit.\"; fi; exit 0",
+          "timeout": 5
+        }]
+      }
+    ]
+  }
+}

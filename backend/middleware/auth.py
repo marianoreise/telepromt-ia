@@ -1,9 +1,9 @@
 import os
 import logging
-import jwt
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer
 from dataclasses import dataclass
+from supabase import create_client
 
 logger = logging.getLogger(__name__)
 security = HTTPBearer()
@@ -17,21 +17,17 @@ class UserContext:
 
 async def get_current_user(credentials=Depends(security)) -> UserContext:
     try:
-        jwt_secret = os.environ["SUPABASE_JWT_SECRET"]
-        payload = jwt.decode(
-            credentials.credentials,
-            jwt_secret,
-            algorithms=["HS256"],
-            audience="authenticated",
+        client = create_client(
+            os.environ["SUPABASE_URL"],
+            os.environ["SUPABASE_ANON_KEY"],
         )
-        uid = payload.get("sub")
-        if not uid:
+        response = client.auth.get_user(credentials.credentials)
+        user = response.user
+        if not user:
             raise HTTPException(status_code=401, detail="Token invalido")
-        return UserContext(id=uid, email=payload.get("email", ""))
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expirado")
-    except jwt.InvalidTokenError:
+        return UserContext(id=str(user.id), email=user.email or "")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error validando token: %s", e)
         raise HTTPException(status_code=401, detail="Token invalido")
-    except KeyError:
-        logger.error("SUPABASE_JWT_SECRET no configurado")
-        raise HTTPException(status_code=500, detail="Error de configuracion del servidor")

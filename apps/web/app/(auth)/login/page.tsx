@@ -34,13 +34,6 @@ export default function LoginPage() {
     router.refresh()
   }
 
-  async function handleGoogleLogin() {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    })
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">
@@ -77,19 +70,6 @@ export default function LoginPage() {
               {loading ? 'Ingresando...' : 'Ingresar'}
             </Button>
           </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">o</span>
-            </div>
-          </div>
-
-          <Button variant="outline" className="w-full" onClick={handleGoogleLogin}>
-            Continuar con Google
-          </Button>
 
           <p className="text-center text-sm text-gray-600">
             ¿No tenés cuenta?{' '}

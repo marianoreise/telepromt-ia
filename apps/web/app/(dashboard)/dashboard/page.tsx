@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+
+const DOWNLOAD_URL = 'https://github.com/marianoreise/telepromt-ia/releases/latest/download/Telepromt.IA_0.1.0_x64-setup.exe'
 
 async function getUserData() {
   const supabase = await createClient()
@@ -71,12 +72,18 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>App Desktop</CardDescription>
-            <CardTitle className="text-sm font-medium">Windows 10/11</CardTitle>
+            <CardTitle className="text-sm font-medium">Windows 10/11 · v1.0.0</CardTitle>
           </CardHeader>
           <CardContent>
-            <Button size="sm" disabled>
-              Próximamente
-            </Button>
+            <a
+              href={DOWNLOAD_URL}
+              className="inline-flex items-center gap-1.5 h-8 rounded-md bg-blue-600 px-3 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Descargar .exe
+            </a>
           </CardContent>
         </Card>
       </div>
@@ -98,8 +105,8 @@ export default async function DashboardPage() {
                   {step.label}
                 </span>
                 {!step.done && i === onboardingStep && (
-                  <a href={['/settings', '/knowledge', '#'][i]} className="ml-auto inline-flex h-7 items-center rounded-md border border-input bg-background px-2.5 text-xs font-medium hover:bg-muted">
-                    Ir
+                  <a href={['/settings', '/knowledge', DOWNLOAD_URL][i]} className="ml-auto inline-flex h-7 items-center rounded-md border border-input bg-background px-2.5 text-xs font-medium hover:bg-muted">
+                    {i === 2 ? 'Descargar' : 'Ir'}
                   </a>
                 )}
               </div>

@@ -7,7 +7,7 @@ export default function SessionsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Historial de sesiones</CardTitle>
-          <CardDescription>Disponible en Sprint 4-5 cuando la app desktop esté lista</CardDescription>
+          <CardDescription>Tus sesiones activas aparecerán aquí una vez que uses la app desktop</CardDescription>
         </CardHeader>
       </Card>
     </div>

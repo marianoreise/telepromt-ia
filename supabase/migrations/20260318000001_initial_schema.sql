@@ -17,22 +17,33 @@ CREATE TABLE IF NOT EXISTS public.user_profiles (
   updated_at        timestamptz DEFAULT now() NOT NULL
 );
 
-CREATE INDEX idx_user_profiles_user_id ON public.user_profiles(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON public.user_profiles(user_id);
 
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN NEW.updated_at = now(); RETURN NEW; END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_user_profiles_updated_at ON public.user_profiles;
 CREATE TRIGGER trigger_user_profiles_updated_at
   BEFORE UPDATE ON public.user_profiles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "user_profiles_select" ON public.user_profiles FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "user_profiles_insert" ON public.user_profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "user_profiles_update" ON public.user_profiles FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "user_profiles_delete" ON public.user_profiles FOR DELETE USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='user_profiles' AND policyname='user_profiles_select') THEN
+    CREATE POLICY "user_profiles_select" ON public.user_profiles FOR SELECT USING (auth.uid() = user_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='user_profiles' AND policyname='user_profiles_insert') THEN
+    CREATE POLICY "user_profiles_insert" ON public.user_profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='user_profiles' AND policyname='user_profiles_update') THEN
+    CREATE POLICY "user_profiles_update" ON public.user_profiles FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='user_profiles' AND policyname='user_profiles_delete') THEN
+    CREATE POLICY "user_profiles_delete" ON public.user_profiles FOR DELETE USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 COMMENT ON TABLE public.user_profiles IS 'Perfil extendido del usuario con preferencias y estado de onboarding';
 
@@ -48,14 +59,24 @@ CREATE TABLE IF NOT EXISTS public.credit_transactions (
   created_at      timestamptz DEFAULT now() NOT NULL
 );
 
-CREATE INDEX idx_credit_transactions_user_id ON public.credit_transactions(user_id);
-CREATE INDEX idx_credit_transactions_created_at ON public.credit_transactions(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_credit_transactions_user_id ON public.credit_transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_credit_transactions_created_at ON public.credit_transactions(created_at DESC);
 
 ALTER TABLE public.credit_transactions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "credit_transactions_select" ON public.credit_transactions FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "credit_transactions_insert" ON public.credit_transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "credit_transactions_update" ON public.credit_transactions FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "credit_transactions_delete" ON public.credit_transactions FOR DELETE USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='credit_transactions' AND policyname='credit_transactions_select') THEN
+    CREATE POLICY "credit_transactions_select" ON public.credit_transactions FOR SELECT USING (auth.uid() = user_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='credit_transactions' AND policyname='credit_transactions_insert') THEN
+    CREATE POLICY "credit_transactions_insert" ON public.credit_transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='credit_transactions' AND policyname='credit_transactions_update') THEN
+    CREATE POLICY "credit_transactions_update" ON public.credit_transactions FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='credit_transactions' AND policyname='credit_transactions_delete') THEN
+    CREATE POLICY "credit_transactions_delete" ON public.credit_transactions FOR DELETE USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 COMMENT ON TABLE public.credit_transactions IS 'Registro de todos los movimientos de créditos del usuario';
 
@@ -77,6 +98,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS trigger_welcome_credits ON public.user_profiles;
 CREATE TRIGGER trigger_welcome_credits
   AFTER INSERT ON public.user_profiles
   FOR EACH ROW EXECUTE FUNCTION public.grant_welcome_credits();

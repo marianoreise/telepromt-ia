@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
-from routers import health
+from routers import health, stt, knowledge, sessions, payments
 
 load_dotenv()
 
@@ -27,6 +27,10 @@ app.add_middleware(
 )
 
 app.include_router(health.router)
+app.include_router(stt.router)
+app.include_router(knowledge.router)
+app.include_router(sessions.router)
+app.include_router(payments.router)
 
 @app.on_event("startup")
 async def startup():

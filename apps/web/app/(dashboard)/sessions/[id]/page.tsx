@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useSessionTimer } from '@/hooks/useSessionTimer'
 import { formatDuration } from '@/lib/format-duration'
 import type { SessionDetail } from '@/types/session'
+import Image from 'next/image'
 import { ArrowLeft, Radio } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
@@ -265,6 +266,16 @@ function EndedSessionView({
           {isExpired ? 'Expirada' : 'Completada'}
         </Badge>
       </div>
+
+      {/* Mensaje créditos agotados — solo si expiró */}
+      {isExpired && (
+        <div className="rounded-lg bg-gray-100 px-4 py-3 flex items-center gap-2 text-sm font-medium text-gray-900">
+          Tus créditos para esta sesión se han agotado, si quieres seguir usando
+          <Image src="/logo.png" alt="listnr.io" width={18} height={18} className="rounded inline-block mx-1" />
+          dirigete a la sección{' '}
+          <a href="/billing" className="underline" style={{ color: '#1B6CA8' }}>Créditos</a>
+        </div>
+      )}
 
       <Card className="border border-gray-100 shadow-sm">
         <CardHeader className="pb-3">

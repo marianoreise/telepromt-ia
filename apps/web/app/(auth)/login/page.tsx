@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -35,11 +36,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Telepromt IA</CardTitle>
-          <CardDescription>Iniciá sesión en tu cuenta</CardDescription>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
+      {/* Logo + Brand */}
+      <div className="flex items-center gap-3 mb-8">
+        <Image src="/logo.png" alt="listnr.io" width={52} height={52} className="rounded-xl" />
+        <span className="text-3xl font-bold tracking-tight" style={{ color: '#1B6CA8' }}>
+          listnr<span style={{ color: '#F5A623' }}>.io</span>
+        </span>
+      </div>
+
+      <Card className="w-full max-w-md border border-gray-100 shadow-sm">
+        <CardHeader className="text-center pb-2">
+          <CardDescription className="text-sm text-gray-500">Iniciá sesión en tu cuenta</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleLogin} className="space-y-4">
@@ -66,14 +74,19 @@ export default function LoginPage() {
               />
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full text-white"
+              style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+              disabled={loading}
+            >
               {loading ? 'Ingresando...' : 'Ingresar'}
             </Button>
           </form>
 
           <p className="text-center text-sm text-gray-600">
             ¿No tenés cuenta?{' '}
-            <Link href="/register" className="font-medium text-blue-600 hover:underline">
+            <Link href="/register" className="font-medium hover:underline" style={{ color: '#1B6CA8' }}>
               Registrate gratis
             </Link>
           </p>

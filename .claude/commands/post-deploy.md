@@ -38,3 +38,17 @@ Invocar `ui-designer` para verificar consistencia visual:
 - Todos verdes → `✅ PRODUCCIÓN SANA — release cerrado`
 - UX/visual con issues menores (🟡) → `⚠️ SANO CON DEUDA — crear tareas de mejora`
 - Técnico rojo o UX/visual 🔴 → `❌ PROBLEMAS — invocar release-manager para rollback`
+
+## Paso 5 — Consumo de tokens de la sesión
+
+Al final del reporte SIEMPRE incluir:
+
+```
+## Consumo de tokens — sesión
+| Concepto | Tokens |
+|---|---|
+| Agentes lanzados | N |
+| Tokens totales (aprox) | ~XXX,XXX |
+```
+
+Los tokens se suman de los campos `total_tokens` reportados por cada agente lanzado durante la sesión de trabajo. Si no hay datos exactos disponibles, indicar "no disponible" pero la sección SIEMPRE debe aparecer.

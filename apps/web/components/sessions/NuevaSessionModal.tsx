@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label'
 import { RoleCombobox } from '@/components/role-combobox'
 import { createClient } from '@/lib/supabase/client'
 import type { SessionDetail, ActiveSessionConflict } from '@/types/session'
+import ChoosePlatformModal from '@/components/sessions/ChoosePlatformModal'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
 
@@ -36,6 +37,8 @@ export default function NuevaSessionModal({
   const [fieldErrors, setFieldErrors] = useState<{ company?: string; job_title?: string }>({})
   const [conflictId, setConflictId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [showPlatformChoice, setShowPlatformChoice] = useState(false)
+  const [createdSessionId, setCreatedSessionId] = useState<string | null>(null)
 
   async function getToken(): Promise<string> {
     const supabase = createClient()
@@ -75,6 +78,8 @@ export default function NuevaSessionModal({
         onSessionCreated(data)
         setCompany('')
         setJobTitle('')
+        setCreatedSessionId(data.id)
+        setShowPlatformChoice(true)
       } else if (res.status === 409) {
         const data: { detail: ActiveSessionConflict } = await res.json()
         setConflictId(data.detail.active_session_id)
@@ -89,7 +94,21 @@ export default function NuevaSessionModal({
     }
   }
 
+  function handlePlatformClose() {
+    setShowPlatformChoice(false)
+    setCreatedSessionId(null)
+    onOpenChange(false)
+  }
+
   return (
+    <>
+    {createdSessionId && (
+      <ChoosePlatformModal
+        open={showPlatformChoice}
+        sessionId={createdSessionId}
+        onClose={handlePlatformClose}
+      />
+    )}
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -156,5 +175,6 @@ export default function NuevaSessionModal({
         </form>
       </DialogContent>
     </Dialog>
+    </>
   )
 }

@@ -1,149 +1,200 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { register, unregister } from "@tauri-apps/plugin-global-shortcut";
+// App.tsx — Entry point + router de pantallas — ListnrIO Desktop
+// Windows-only · TypeScript strict · estilos inline
 
-// ── Types ────────────────────────────────────────────────────────────────────
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
 
-type AppState = "hidden" | "listening" | "thinking" | "showing";
+import type {
+  AppScreen,
+  User,
+  SessionConfig,
+  Session,
+  Transcript,
+  AIMessage,
+  SessionType,
+} from './types';
+import { baseContainer, FONT, RADIUS, tabBar, tabBtn, btnPrimary } from './theme';
 
-interface Transcript {
-  text: string;
-  isFinal: boolean;
-}
+import { LoginScreen } from './components/LoginScreen';
+import { Header } from './components/Header';
+import { MainScreen } from './components/MainScreen';
+import { SessionWizard } from './components/SessionWizard/index';
+import { ActivateScreen } from './components/ActivateScreen';
+import { ActiveSession } from './components/ActiveSession/index';
+import { CollapsedView } from './components/CollapsedView';
 
-interface AIResponse {
-  text: string;
-  isStreaming: boolean;
-}
+// ── Config inicial por defecto ────────────────────────────────────────────────
 
-// ── Styles (inline — no CSS file to avoid flash) ─────────────────────────────
-
-const styles = {
-  container: {
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    flexDirection: "column" as const,
-    padding: "12px",
-    gap: "8px",
-    fontFamily: "'Segoe UI', system-ui, sans-serif",
-    fontSize: "13px",
-    color: "#fff",
-    userSelect: "none" as const,
-    pointerEvents: "none" as const,
-  },
-  panel: {
-    background: "rgba(10, 10, 20, 0.82)",
-    backdropFilter: "blur(12px)",
-    borderRadius: "10px",
-    border: "1px solid rgba(255,255,255,0.12)",
-    padding: "10px 14px",
-    pointerEvents: "auto" as const,
-  },
-  header: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: "4px",
-  },
-  dot: (color: string) => ({
-    width: "7px",
-    height: "7px",
-    borderRadius: "50%",
-    background: color,
-    display: "inline-block",
-    marginRight: "6px",
-  }),
-  label: {
-    fontSize: "10px",
-    fontWeight: 600 as const,
-    textTransform: "uppercase" as const,
-    letterSpacing: "0.08em",
-    opacity: 0.5,
-  },
-  text: {
-    lineHeight: 1.5,
-    opacity: 0.9,
-    wordBreak: "break-word" as const,
-  },
-  controls: {
-    display: "flex",
-    gap: "6px",
-    flexWrap: "wrap" as const,
-    pointerEvents: "auto" as const,
-  },
-  btn: (active?: boolean, danger?: boolean) => ({
-    padding: "4px 10px",
-    borderRadius: "6px",
-    border: "1px solid rgba(255,255,255,0.18)",
-    background: danger
-      ? "rgba(220,50,50,0.35)"
-      : active
-      ? "rgba(100,200,120,0.35)"
-      : "rgba(255,255,255,0.08)",
-    color: "#fff",
-    fontSize: "11px",
-    cursor: "pointer",
-    fontWeight: 500 as const,
-    transition: "background 0.15s",
-  }),
-  shortcut: {
-    fontSize: "9px",
-    opacity: 0.4,
-    marginLeft: "4px",
-  },
+const DEFAULT_CONFIG: Partial<SessionConfig> = {
+  language: 'castellano',
+  simpleLanguage: false,
+  extraContext: '',
+  resumeId: null,
+  aiModel: 'claude-sonnet-4-5',
+  autoGenerate: false,
+  saveTranscript: true,
 };
 
-// ── State dots ────────────────────────────────────────────────────────────────
-
-const STATE_COLORS: Record<AppState, string> = {
-  hidden: "#666",
-  listening: "#4ade80",
-  thinking: "#facc15",
-  showing: "#60a5fa",
-};
-
-const STATE_LABELS: Record<AppState, string> = {
-  hidden: "Inactivo",
-  listening: "Escuchando",
-  thinking: "Procesando",
-  showing: "Respuesta lista",
-};
-
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Componente principal ───────────────────────────────────────────────────────
 
 export default function App() {
-  const [appState, setAppState] = useState<AppState>("hidden");
-  const [visible, setVisible] = useState(true);
-  const [mousePassthrough, setMousePassthrough] = useState(true);
-  const [transcript, setTranscript] = useState<Transcript>({ text: "", isFinal: false });
-  const [aiResponse, setAiResponse] = useState<AIResponse>({ text: "", isStreaming: false });
-  const [opacity, setOpacity] = useState(0.85);
-  const [version, setVersion] = useState("");
+  const [screen, setScreen] = useState<AppScreen>('login');
+  const [previousScreen, setPreviousScreen] = useState<AppScreen>('main');
+  const [user, setUser] = useState<User | null>(null);
+  const [sessionConfig, setSessionConfig] = useState<Partial<SessionConfig>>(DEFAULT_CONFIG);
+  const [activeSession, setActiveSession] = useState<Session | null>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [transcript, setTranscript] = useState<Transcript>({ text: '', isFinal: false });
+  const [aiMessages, setAiMessages] = useState<AIMessage[]>([]);
+  const [isListening, setIsListening] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
+  // Ref para previousScreen — necesario en el handler de shortcuts (sin stale closure)
+  const previousScreenRef = useRef<AppScreen>('main');
 
-  // Load version
-  useEffect(() => {
-    invoke<string>("get_app_version").then(setVersion).catch(() => {});
+  // ── Navegación ────────────────────────────────────────────────────────────────
+
+  const handleSetScreen = useCallback(
+    (nextScreen: AppScreen) => {
+      setPreviousScreen(screen);
+      previousScreenRef.current = screen;
+      setScreen(nextScreen);
+    },
+    [screen]
+  );
+
+  // ── Auth ──────────────────────────────────────────────────────────────────────
+
+  const handleLogin = useCallback((loggedUser: User) => {
+    setUser(loggedUser);
+    setScreen('main');
   }, []);
 
-  // Global shortcuts
+  const handleLogout = useCallback(() => {
+    setUser(null);
+    setScreen('login');
+    setSessionConfig(DEFAULT_CONFIG);
+    wsRef.current?.close();
+    wsRef.current = null;
+    setIsListening(false);
+    setActiveSession(null);
+    setTranscript({ text: '', isFinal: false });
+    setAiMessages([]);
+  }, []);
+
+  // ── Selección de tipo de sesión desde MainScreen ──────────────────────────────
+
+  const handleSelectType = useCallback(
+    (type: SessionType) => {
+      setSessionConfig((prev) => ({ ...DEFAULT_CONFIG, ...prev, type }));
+      handleSetScreen('wizard');
+    },
+    [handleSetScreen]
+  );
+
+  // ── Wizard ────────────────────────────────────────────────────────────────────
+
+  const handleWizardFinish = useCallback(() => {
+    handleSetScreen('activate');
+  }, [handleSetScreen]);
+
+  const handleWizardBack = useCallback(() => {
+    handleSetScreen('main');
+  }, [handleSetScreen]);
+
+  const handleConfigChange = useCallback((partial: Partial<SessionConfig>) => {
+    setSessionConfig((prev) => ({ ...prev, ...partial }));
+  }, []);
+
+  // ── Activar sesión ────────────────────────────────────────────────────────────
+
+  const handleActivate = useCallback(() => {
+    const newSession: Session = {
+      id: `session-${Date.now()}`,
+      company: sessionConfig.company ?? 'Sin empresa',
+      language: sessionConfig.language ?? 'castellano',
+      status: 'active',
+      type: sessionConfig.type ?? 'free',
+      createdAt: new Date().toISOString(),
+    };
+    setActiveSession(newSession);
+    setTranscript({ text: '', isFinal: false });
+    setAiMessages([]);
+    setScreen('session-active');
+  }, [sessionConfig]);
+
+  const handleActivateBack = useCallback(() => {
+    handleSetScreen('wizard');
+  }, [handleSetScreen]);
+
+  // ── Fin de sesión ─────────────────────────────────────────────────────────────
+
+  const handleStopSession = useCallback(() => {
+    wsRef.current?.close();
+    wsRef.current = null;
+    setIsListening(false);
+
+    if (activeSession) {
+      const completed: Session = { ...activeSession, status: 'completed' };
+      setSessions((prev) => [completed, ...prev]);
+    }
+
+    setActiveSession(null);
+    setScreen('main');
+  }, [activeSession]);
+
+  // ── Colapsar / Expandir ───────────────────────────────────────────────────────
+
+  const handleCollapse = useCallback(() => {
+    previousScreenRef.current = screen;
+    setPreviousScreen(screen);
+    setScreen('collapsed');
+  }, [screen]);
+
+  const handleExpand = useCallback(() => {
+    const target: AppScreen =
+      previousScreen === 'collapsed' || previousScreen === 'login' ? 'main' : previousScreen;
+    setScreen(target);
+  }, [previousScreen]);
+
+  // ── AI Messages ───────────────────────────────────────────────────────────────
+
+  const handleAddAIMessage = useCallback((msg: AIMessage) => {
+    setAiMessages((prev) => [...prev, msg]);
+  }, []);
+
+  // ── Shortcuts globales ────────────────────────────────────────────────────────
+  // Ctrl+Shift+T → colapsar/expandir
+  // Ctrl+Shift+M → reservado (sin acción en nueva UI)
+  // Ctrl+Shift+C → limpiar transcripción y respuestas
+
   useEffect(() => {
-    const shortcuts = [
-      // Ctrl+Shift+T → toggle overlay visibility
+    const shortcuts: { key: string; handler: () => void }[] = [
       {
-        key: "CommandOrControl+Shift+T",
-        handler: () => toggleVisible(),
+        key: 'CommandOrControl+Shift+T',
+        handler: () => {
+          setScreen((current) => {
+            if (current === 'collapsed') {
+              const prev = previousScreenRef.current;
+              return prev === 'collapsed' ? 'main' : prev;
+            }
+            previousScreenRef.current = current;
+            setPreviousScreen(current);
+            return 'collapsed';
+          });
+        },
       },
-      // Ctrl+Shift+M → toggle mouse passthrough
       {
-        key: "CommandOrControl+Shift+M",
-        handler: () => toggleMouse(),
+        key: 'CommandOrControl+Shift+M',
+        handler: () => {
+          // Sin acción activa en esta versión
+        },
       },
-      // Ctrl+Shift+C → clear response
       {
-        key: "CommandOrControl+Shift+C",
-        handler: () => clearResponse(),
+        key: 'CommandOrControl+Shift+C',
+        handler: () => {
+          setTranscript({ text: '', isFinal: false });
+          setAiMessages([]);
+        },
       },
     ];
 
@@ -159,144 +210,129 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Handlers ────────────────────────────────────────────────────────────────
+  // ── Render por pantalla ───────────────────────────────────────────────────────
 
-  const toggleVisible = useCallback(() => {
-    setVisible((v) => {
-      const next = !v;
-      invoke("set_overlay_visible", { visible: next }).catch(() => {});
-      return next;
-    });
-  }, []);
+  // Vista colapsada: sin marco, solo icono/soundwave
+  if (screen === 'collapsed') {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '4px',
+        }}
+      >
+        <CollapsedView isSessionActive={activeSession !== null} onExpand={handleExpand} />
+      </div>
+    );
+  }
 
-  const toggleMouse = useCallback(() => {
-    setMousePassthrough((v) => {
-      const next = !v;
-      invoke("set_ignore_mouse", { ignore: next }).catch(() => {});
-      return next;
-    });
-  }, []);
+  // Pantalla de login
+  if (screen === 'login') {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
 
-  const clearResponse = useCallback(() => {
-    setTranscript({ text: "", isFinal: false });
-    setAiResponse({ text: "", isStreaming: false });
-    setAppState("hidden");
-  }, []);
+  // Sesión activa: layout overlay oscuro
+  if (screen === 'session-active' && activeSession !== null) {
+    return (
+      <div style={{ userSelect: 'none', fontFamily: FONT.family }}>
+        <ActiveSession
+          session={activeSession}
+          transcript={transcript}
+          aiMessages={aiMessages}
+          isListening={isListening}
+          wsRef={wsRef}
+          onSetTranscript={setTranscript}
+          onAddAIMessage={handleAddAIMessage}
+          onSetAIMessages={setAiMessages}
+          onSetIsListening={setIsListening}
+          onStop={handleStopSession}
+          onCollapse={handleCollapse}
+          onSetScreen={handleSetScreen}
+          onLogout={handleLogout}
+        />
+      </div>
+    );
+  }
 
-  const connectAudio = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.close();
-      setAppState("hidden");
-      return;
-    }
-
-    // Connect to backend STT WebSocket
-    const backendUrl = import.meta.env.VITE_BACKEND_WS_URL || "ws://localhost:8000";
-    const ws = new WebSocket(`${backendUrl}/ws/stt`);
-    wsRef.current = ws;
-
-    ws.onopen = () => setAppState("listening");
-    ws.onclose = () => setAppState("hidden");
-    ws.onerror = () => setAppState("hidden");
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        if (data.type === "transcript") {
-          setTranscript({ text: data.text, isFinal: data.is_final });
-          if (data.is_final && data.text.trim()) {
-            setAppState("thinking");
-          }
-        }
-
-        if (data.type === "ai_start") {
-          setAiResponse({ text: "", isStreaming: true });
-          setAppState("showing");
-        }
-
-        if (data.type === "ai_chunk") {
-          setAiResponse((prev) => ({ text: prev.text + data.chunk, isStreaming: true }));
-        }
-
-        if (data.type === "ai_done") {
-          setAiResponse((prev) => ({ text: prev.text, isStreaming: false }));
-        }
-      } catch {
-        // ignore malformed messages
-      }
-    };
-  }, []);
-
-  // ── Opacity control via wheel on panel ──────────────────────────────────────
-
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    setOpacity((o) => Math.min(1, Math.max(0.2, o - e.deltaY * 0.001)));
-  };
-
-  // ── Render ───────────────────────────────────────────────────────────────────
-
-  if (!visible) return null;
-
-  const isConnected = appState !== "hidden";
-
-  return (
-    <div style={{ ...styles.container, opacity }}>
-      {/* Status bar */}
-      <div style={styles.panel} onWheel={handleWheel}>
-        <div style={styles.header}>
-          <span>
-            <span style={styles.dot(STATE_COLORS[appState])} />
-            <span style={{ fontWeight: 600 }}>{STATE_LABELS[appState]}</span>
-          </span>
-          {version && <span style={styles.label}>v{version}</span>}
-        </div>
-
-        {/* Controls */}
-        <div style={styles.controls}>
-          <button style={styles.btn(isConnected)} onClick={connectAudio}>
-            {isConnected ? "⏹ Detener" : "▶ Iniciar"}
-            <span style={styles.shortcut}>Ctrl+Shift+T</span>
-          </button>
-
-          <button style={styles.btn(mousePassthrough)} onClick={toggleMouse}>
-            {mousePassthrough ? "🖱 Mouse: Off" : "🖱 Mouse: On"}
-            <span style={styles.shortcut}>Ctrl+Shift+M</span>
-          </button>
-
-          <button style={styles.btn(false, true)} onClick={clearResponse}>
-            ✕ Limpiar
-            <span style={styles.shortcut}>Ctrl+Shift+C</span>
+  // Sesión activa pero sin datos (edge case): redirigir a main
+  if (screen === 'session-active' && activeSession === null) {
+    return (
+      <div style={baseContainer}>
+        <Header user={user} onSetScreen={handleSetScreen} onLogout={handleLogout} />
+        <div style={{ padding: '24px', textAlign: 'center' }}>
+          <button
+            onClick={() => setScreen('main')}
+            style={{ ...btnPrimary, fontFamily: FONT.family, borderRadius: RADIUS.md }}
+          >
+            Volver al inicio
           </button>
         </div>
       </div>
+    );
+  }
 
-      {/* Transcript panel */}
-      {transcript.text && (
-        <div style={styles.panel}>
-          <div style={styles.label}>
-            <span style={styles.dot("#94a3b8")} />
-            Transcripción
-            {!transcript.isFinal && " •••"}
-          </div>
-          <p style={{ ...styles.text, opacity: transcript.isFinal ? 0.9 : 0.55, marginTop: "4px" }}>
-            {transcript.text}
-          </p>
+  // Wizard de creación de sesión
+  if (screen === 'wizard') {
+    return (
+      <div style={{ ...baseContainer }}>
+        <Header
+          user={user}
+          onSetScreen={handleSetScreen}
+          onLogout={handleLogout}
+          previousScreen={previousScreen}
+        />
+        {/* Tabs fijadas encima del wizard */}
+        <div style={tabBar}>
+          <button style={{ ...tabBtn(true), fontFamily: FONT.family }}>Crear</button>
+          <button
+            style={{ ...tabBtn(false), fontFamily: FONT.family }}
+            onClick={() => handleSetScreen('main')}
+          >
+            Sesiones pasadas
+          </button>
         </div>
-      )}
+        <SessionWizard
+          config={sessionConfig}
+          onChange={handleConfigChange}
+          onFinish={handleWizardFinish}
+          onBack={handleWizardBack}
+        />
+      </div>
+    );
+  }
 
-      {/* AI Response panel */}
-      {aiResponse.text && (
-        <div style={{ ...styles.panel, borderColor: "rgba(96,165,250,0.3)" }}>
-          <div style={styles.label}>
-            <span style={styles.dot("#60a5fa")} />
-            Respuesta IA
-            {aiResponse.isStreaming && " •••"}
-          </div>
-          <p style={{ ...styles.text, marginTop: "4px" }}>{aiResponse.text}</p>
-        </div>
-      )}
+  // Pantalla de confirmación antes de activar
+  if (screen === 'activate') {
+    return (
+      <div style={{ ...baseContainer }}>
+        <Header
+          user={user}
+          onSetScreen={handleSetScreen}
+          onLogout={handleLogout}
+          previousScreen={previousScreen}
+        />
+        <ActivateScreen
+          config={sessionConfig}
+          onActivate={handleActivate}
+          onBack={handleActivateBack}
+        />
+      </div>
+    );
+  }
+
+  // ── Pantalla principal ────────────────────────────────────────────────────────
+  return (
+    <div style={{ ...baseContainer, display: 'flex', flexDirection: 'column' }}>
+      <Header
+        user={user}
+        onSetScreen={handleSetScreen}
+        onLogout={handleLogout}
+        previousScreen={previousScreen}
+      />
+      <MainScreen sessions={sessions} onSelectType={handleSelectType} />
     </div>
   );
 }
+

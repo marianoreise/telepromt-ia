@@ -52,7 +52,7 @@
   "plugins": {
     "deep-link": {
       "desktop": {
-        "schemes": ["telepromt"]
+        "schemes": ["telepromt", "listnr"]
       }
     }
   }

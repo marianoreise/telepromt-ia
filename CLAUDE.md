@@ -33,6 +33,10 @@ Superficies:
 
 ## Decisiones de producto — sin excepciones
 - El campo "Perfil Profesional" (h2/título dentro del card de Settings) fue eliminado permanentemente — NO volver a agregarlo. El card de configuración NO tiene título, solo tiene los campos directamente.
+- La aplicación desktop se llama **ListnrIO** — este es el nombre que debe aparecer en la UI del desktop app. NUNCA usar "Telepromt IA" en la interfaz del desktop.
+- Toda la UI del desktop app debe estar en **español** — sin excepción. Cualquier texto en inglés en el desktop app debe traducirse al castellano.
+- El selector de idioma de sesión tiene 3 opciones: **Castellano · Inglés · Cast/Eng** (la tercera opción es para entrevistas mixtas en castellano e inglés).
+- **Auth del desktop app requiere sesión web activa** — el usuario DEBE estar logueado en la web app (listnr.io) para que el desktop sincronice usuario, créditos y sesiones. El flujo es: abrir web → loguear → la web emite deep link `listnr://auth?token=...` → desktop recibe el token y queda autenticado. Sin sesión web activa, el desktop solo muestra la pantalla de login.
 
 ## Reglas de código — sin excepciones
 - TypeScript strict mode · cero `any`
@@ -44,6 +48,7 @@ Superficies:
 - Al finalizar cada feature o módulo: ejecutar test de regresión completo ANTES del commit · NO commitear si algún test falla
 - API routes Next.js: siempre getUser() · NUNCA getSession()
 - Desktop: SOLO Windows · nunca generar código macOS/CoreAudio/DMG
+- Desktop build: NUNCA usar `cargo build` directamente — Tauri 2 requiere `tauri dev` o `tauri build` (el build script necesita el contexto de la CLI de Tauri)
 
 ## Equipo de agentes
 TIER 0: project-manager (Opus) — briefing ejecutivo al inicio de sesión

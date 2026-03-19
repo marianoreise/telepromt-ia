@@ -43,11 +43,15 @@ export default function KnowledgePage() {
       const token = await getToken()
       const form = new FormData()
       form.append('file', file)
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 60000)
       const res = await fetch(`${API_URL}/knowledge/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: form,
+        signal: controller.signal,
       })
+      clearTimeout(timeout)
       if (res.ok) {
         const data = await res.json()
         const chunks = data.chunks_indexed ?? data.chunks_created ?? 0
@@ -58,7 +62,11 @@ export default function KnowledgePage() {
         setError(data.detail ?? 'Error al subir el archivo')
       }
     } catch (err) {
-      setError('Error de conexión. Intente nuevamente.')
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError('La operación tardó demasiado. Intentá con un archivo más pequeño.')
+      } else {
+        setError('Error de conexión. Intente nuevamente.')
+      }
     } finally {
       setUploading(false)
     }

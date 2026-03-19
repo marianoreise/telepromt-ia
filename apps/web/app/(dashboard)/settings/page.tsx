@@ -1,34 +1,31 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-
-const inputCls = "flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
 
 export default function SettingsPage() {
-  const supabase = createClient()
+  const supabase = useRef(createClient()).current
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
-  const [form, setForm] = useState({
-    display_name: '',
-    role: '',
-    target_company: '',
-    preferred_language: 'es',
-  })
+  const [displayName, setDisplayName] = useState('')
+  const [role, setRole] = useState('')
+  const [targetCompany, setTargetCompany] = useState('')
+  const [lang, setLang] = useState('es')
 
   useEffect(() => {
-    async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
+    supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return
-      const { data } = await supabase.from('user_profiles').select('*').eq('user_id', user.id).single()
-      if (data) setForm({ display_name: data.display_name ?? '', role: data.role ?? '', target_company: data.target_company ?? '', preferred_language: data.preferred_language ?? 'es' })
-    }
-    load()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+      supabase.from('user_profiles').select('*').eq('user_id', user.id).single().then(({ data }) => {
+        if (data) {
+          setDisplayName(data.display_name ?? '')
+          setRole(data.role ?? '')
+          setTargetCompany(data.target_company ?? '')
+          setLang(data.preferred_language ?? 'es')
+        }
+      })
+    })
+  }, [supabase])
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -37,12 +34,10 @@ export default function SettingsPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setError('Sesión expirada. Recargá la página.'); return }
-
       const { error: upsertError } = await supabase.from('user_profiles').upsert(
-        { user_id: user.id, ...form, onboarding_step: 1 },
+        { user_id: user.id, display_name: displayName, role, target_company: targetCompany, preferred_language: lang, onboarding_step: 1 },
         { onConflict: 'user_id' }
       )
-
       if (upsertError) {
         setError(`Error al guardar: ${upsertError.message}`)
       } else {
@@ -54,43 +49,43 @@ export default function SettingsPage() {
     }
   }
 
-  return (
-    <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold">Configuración</h1>
+  const inp = "block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+  const lbl = "block text-sm font-medium text-gray-700 mb-1"
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Perfil profesional</CardTitle>
-          <CardDescription>Esta información se usa para personalizar las respuestas del asistente</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="display_name" className="text-sm font-medium">Nombre</label>
-              <input id="display_name" className={inputCls} autoComplete="off" value={form.display_name} onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))} placeholder="Tu nombre completo" />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="role" className="text-sm font-medium">Rol / Posición</label>
-              <input id="role" className={inputCls} autoComplete="off" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} placeholder="ej: Senior Software Engineer" />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="company" className="text-sm font-medium">Empresa objetivo</label>
-              <input id="company" className={inputCls} autoComplete="off" value={form.target_company} onChange={e => setForm(f => ({ ...f, target_company: e.target.value }))} placeholder="ej: Google, Mercado Libre" />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="lang" className="text-sm font-medium">Idioma de respuestas</label>
-              <select id="lang" value={form.preferred_language} onChange={e => setForm(f => ({ ...f, preferred_language: e.target.value }))} className={inputCls}>
-                <option value="es">Español</option>
-                <option value="en">English</option>
-              </select>
-            </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button type="submit" disabled={loading}>
-              {saved ? '¡Guardado!' : loading ? 'Guardando...' : 'Guardar cambios'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+  return (
+    <div style={{ maxWidth: 640 }}>
+      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Configuración</h1>
+
+      <div style={{ background: 'white', borderRadius: 12, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb' }}>
+        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Perfil profesional</h2>
+        <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20 }}>Esta información se usa para personalizar las respuestas del asistente</p>
+
+        <form onSubmit={handleSave}>
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="f_name" className={lbl}>Nombre</label>
+            <input id="f_name" type="text" className={inp} placeholder="Tu nombre completo" value={displayName} onChange={e => setDisplayName(e.target.value)} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="f_role" className={lbl}>Rol / Posición</label>
+            <input id="f_role" type="text" className={inp} placeholder="ej: Senior Software Engineer" value={role} onChange={e => setRole(e.target.value)} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label htmlFor="f_company" className={lbl}>Empresa objetivo</label>
+            <input id="f_company" type="text" className={inp} placeholder="ej: Google, Mercado Libre" value={targetCompany} onChange={e => setTargetCompany(e.target.value)} />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label htmlFor="f_lang" className={lbl}>Idioma de respuestas</label>
+            <select id="f_lang" className={inp} value={lang} onChange={e => setLang(e.target.value)}>
+              <option value="es">Español</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          {error && <p style={{ color: '#ef4444', fontSize: 13, marginBottom: 12 }}>{error}</p>}
+          <button type="submit" disabled={loading} style={{ background: '#1B6CA8', color: 'white', padding: '8px 20px', borderRadius: 8, fontSize: 14, fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+            {saved ? '¡Guardado!' : loading ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+        </form>
+      </div>
     </div>
   )
 }

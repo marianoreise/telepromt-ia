@@ -18,16 +18,16 @@ const PACKAGES: (Package & { popular?: boolean; description: string })[] = [
   {
     id: 'starter',
     credits: 10,
-    price: 5,
-    currency: 'USD',
+    price: 10000,
+    currency: 'ARS',
     title: 'Starter',
     description: '10 créditos · 5 horas de sesión',
   },
   {
     id: 'pro',
     credits: 25,
-    price: 10,
-    currency: 'USD',
+    price: 20000,
+    currency: 'ARS',
     title: 'Pro',
     description: '25 créditos · 12.5 horas de sesión',
     popular: true,
@@ -35,8 +35,8 @@ const PACKAGES: (Package & { popular?: boolean; description: string })[] = [
   {
     id: 'max',
     credits: 60,
-    price: 20,
-    currency: 'USD',
+    price: 55000,
+    currency: 'ARS',
     title: 'Max',
     description: '60 créditos · 30 horas de sesión',
   },
@@ -149,7 +149,7 @@ export default function BillingPage() {
               <CardDescription>{plan.description}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-2xl font-bold">${plan.price} USD</p>
+              <p className="text-2xl font-bold">$ {plan.price.toLocaleString('es-AR')} ARS</p>
               <Button
                 className="w-full"
                 onClick={() => handleBuy(plan.id)}

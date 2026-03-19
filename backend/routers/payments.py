@@ -41,9 +41,9 @@ def _get_mp_sdk() -> mercadopago.SDK:
 # ── Credit packages ───────────────────────────────────────────────────────────
 
 PACKAGES = {
-    "starter": {"credits": 10,  "price": 5.0,  "currency": "USD", "title": "Starter — 10 créditos"},
-    "pro":     {"credits": 25,  "price": 10.0, "currency": "USD", "title": "Pro — 25 créditos"},
-    "max":     {"credits": 60,  "price": 20.0, "currency": "USD", "title": "Max — 60 créditos"},
+    "starter": {"credits": 10,  "price": 10000.0, "currency": "ARS", "title": "Starter — 10 créditos"},
+    "pro":     {"credits": 25,  "price": 20000.0, "currency": "ARS", "title": "Pro — 25 créditos"},
+    "max":     {"credits": 60,  "price": 55000.0, "currency": "ARS", "title": "Max — 60 créditos"},
 }
 
 
@@ -86,9 +86,9 @@ async def create_preference(
         ],
         "payer": {"email": user.email},
         "back_urls": {
-            "success": f"{FRONTEND_URL}/dashboard/billing?status=success",
-            "failure": f"{FRONTEND_URL}/dashboard/billing?status=failure",
-            "pending": f"{FRONTEND_URL}/dashboard/billing?status=pending",
+            "success": f"{FRONTEND_URL}/billing?status=success",
+            "failure": f"{FRONTEND_URL}/billing?status=failure",
+            "pending": f"{FRONTEND_URL}/billing?status=pending",
         },
         "auto_return": "approved",
         "external_reference": external_reference,

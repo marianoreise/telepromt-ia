@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Download, Zap, Clock, CheckCircle2, Circle } from 'lucide-react'
 
 const DOWNLOAD_URL = 'https://github.com/marianoreise/telepromt-ia/releases/latest/download/Telepromt.IA_0.1.0_x64-setup.exe'
 
@@ -31,57 +32,68 @@ export default async function DashboardPage() {
   const minutesLeft = Math.round(Number(balance) * 30)
 
   const STEPS = [
-    { label: 'Completar perfil', done: onboardingStep >= 1 },
-    { label: 'Subir CV / Resume', done: onboardingStep >= 2 },
-    { label: 'Descargar app desktop', done: onboardingStep >= 3 },
+    { label: 'Completar perfil', href: '/settings', done: onboardingStep >= 1 },
+    { label: 'Subir CV / Resume', href: '/knowledge', done: onboardingStep >= 2 },
+    { label: 'Descargar app desktop', href: DOWNLOAD_URL, done: onboardingStep >= 3 },
   ]
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="max-w-4xl space-y-8">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Bienvenido, {displayName}</h1>
-        <p className="text-gray-500 mt-1">Tu asistente IA para entrevistas y videollamadas</p>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Bienvenido, <span className="gradient-text">{displayName}</span>
+        </h1>
+        <p className="text-gray-500 mt-1 text-sm">Tu asistente IA para entrevistas y videollamadas en tiempo real</p>
       </div>
 
-      {/* Saldo de créditos */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-[#1B6CA8] to-[#7B35A2] text-white">
           <CardHeader className="pb-2">
-            <CardDescription>Créditos disponibles</CardDescription>
-            <CardTitle className="text-3xl">{Number(balance).toFixed(1)}</CardTitle>
+            <CardDescription className="text-white/70 text-xs font-medium uppercase tracking-wide">Créditos disponibles</CardDescription>
+            <CardTitle className="text-4xl font-bold text-white">{Number(balance).toFixed(1)}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">{minutesLeft} minutos restantes</p>
+            <div className="flex items-center gap-1.5 text-white/80 text-sm">
+              <Clock className="w-3.5 h-3.5" />
+              {minutesLeft} minutos restantes
+            </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border border-gray-100 shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription>Plan actual</CardDescription>
-            <CardTitle className="text-xl">
-              <Badge variant="secondary">Gratuito</Badge>
+            <CardDescription className="text-xs font-medium uppercase tracking-wide text-gray-400">Plan actual</CardDescription>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Badge className="bg-[#F5A623]/10 text-[#F5A623] border-[#F5A623]/20 hover:bg-[#F5A623]/10">
+                <Zap className="w-3 h-3 mr-1" />
+                Gratuito
+              </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <a href="/billing" className="inline-flex h-7 items-center rounded-md border border-input bg-background px-2.5 text-xs font-medium hover:bg-muted">
+            <a
+              href="/billing"
+              className="inline-flex items-center gap-1.5 h-8 rounded-lg px-3 text-xs font-medium text-white transition-all"
+              style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+            >
               Comprar créditos
             </a>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border border-gray-100 shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription>App Desktop</CardDescription>
-            <CardTitle className="text-sm font-medium">Windows 10/11 · v1.0.0</CardTitle>
+            <CardDescription className="text-xs font-medium uppercase tracking-wide text-gray-400">App Desktop</CardDescription>
+            <CardTitle className="text-sm font-semibold text-gray-700">Windows 10/11 · v1.0.0</CardTitle>
           </CardHeader>
           <CardContent>
             <a
               href={DOWNLOAD_URL}
-              className="inline-flex items-center gap-1.5 h-8 rounded-md bg-blue-600 px-3 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-1.5 h-8 rounded-lg px-3 text-xs font-medium text-white bg-gray-900 hover:bg-gray-800 transition-colors"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
+              <Download className="w-3.5 h-3.5" />
               Descargar .exe
             </a>
           </CardContent>
@@ -90,23 +102,27 @@ export default async function DashboardPage() {
 
       {/* Onboarding */}
       {onboardingStep < 3 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Primeros pasos</CardTitle>
-            <CardDescription>Completá estos pasos para empezar a usar Telepromt IA</CardDescription>
+        <Card className="border border-gray-100 shadow-sm">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-semibold">Primeros pasos</CardTitle>
+            <CardDescription className="text-sm">Completá estos pasos para empezar a usar listnr.io</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {STEPS.map((step, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step.done ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'}`}>
-                  {step.done ? '✓' : i + 1}
-                </div>
-                <span className={`text-sm ${step.done ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+              <div key={i} className="flex items-center gap-3 py-1">
+                {step.done
+                  ? <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                  : <Circle className="w-5 h-5 text-gray-300 shrink-0" />
+                }
+                <span className={`text-sm flex-1 ${step.done ? 'line-through text-gray-400' : 'text-gray-700 font-medium'}`}>
                   {step.label}
                 </span>
                 {!step.done && i === onboardingStep && (
-                  <a href={['/settings', '/knowledge', DOWNLOAD_URL][i]} className="ml-auto inline-flex h-7 items-center rounded-md border border-input bg-background px-2.5 text-xs font-medium hover:bg-muted">
-                    {i === 2 ? 'Descargar' : 'Ir'}
+                  <a
+                    href={step.href}
+                    className="inline-flex items-center h-7 rounded-lg border border-gray-200 px-3 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+                  >
+                    {i === 2 ? 'Descargar' : 'Completar'}
                   </a>
                 )}
               </div>

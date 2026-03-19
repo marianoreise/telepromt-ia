@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Telepromt IA',
-  description: 'Asistente IA en tiempo real para videollamadas y entrevistas',
+  title: 'listnr.io — Asistente IA para entrevistas',
+  description: 'Asistente IA en tiempo real para videollamadas y entrevistas. Respuestas instantáneas, invisible para los demás.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

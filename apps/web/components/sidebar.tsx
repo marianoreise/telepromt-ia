@@ -1,19 +1,29 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import type { User } from '@supabase/supabase-js'
+import {
+  LayoutDashboard,
+  BookOpen,
+  Video,
+  Settings,
+  CreditCard,
+  Download,
+  LogOut,
+} from 'lucide-react'
 
 const DOWNLOAD_URL = 'https://github.com/marianoreise/telepromt-ia/releases/latest/download/Telepromt.IA_0.1.0_x64-setup.exe'
 
 const NAV_ITEMS = [
-  { href: '/dashboard',  label: 'Dashboard' },
-  { href: '/knowledge',  label: 'Conocimiento' },
-  { href: '/sessions',   label: 'Sesiones' },
-  { href: '/settings',   label: 'Configuración' },
-  { href: '/billing',    label: 'Créditos' },
+  { href: '/dashboard',  label: 'Dashboard',      icon: LayoutDashboard },
+  { href: '/sessions',   label: 'Sesiones',        icon: Video },
+  { href: '/knowledge',  label: 'Conocimiento',    icon: BookOpen },
+  { href: '/settings',   label: 'Configuración',   icon: Settings },
+  { href: '/billing',    label: 'Créditos',        icon: CreditCard },
 ]
 
 export default function Sidebar({ user }: { user: User }) {
@@ -28,43 +38,89 @@ export default function Sidebar({ user }: { user: User }) {
   }
 
   return (
-    <aside className="w-56 bg-white border-r flex flex-col">
-      <div className="p-4 border-b">
-        <h1 className="font-bold text-lg text-blue-600">Telepromt IA</h1>
+    <aside
+      className="w-60 flex flex-col"
+      style={{ background: 'var(--sidebar-bg)' }}
+    >
+      {/* Logo */}
+      <div className="px-4 py-5 border-b border-white/10">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <Image
+            src="/logo.png"
+            alt="listnr.io"
+            width={32}
+            height={32}
+            className="rounded-md"
+          />
+          <span className="text-white font-semibold text-base tracking-tight">
+            listnr<span className="text-[#F5A623]">.io</span>
+          </span>
+        </Link>
       </div>
 
-      <nav className="flex-1 p-3 space-y-1">
-        {NAV_ITEMS.map(item => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              'block px-3 py-2 rounded-md text-sm font-medium transition-colors',
-              pathname.startsWith(item.href) && item.href !== '/'
-                ? 'bg-blue-50 text-blue-700'
-                : 'text-gray-600 hover:bg-gray-100'
-            )}
-          >
-            {item.label}
-          </Link>
-        ))}
+      {/* Nav */}
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
+        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          const active = pathname.startsWith(href) && href !== '/'
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
+                active
+                  ? 'text-white'
+                  : 'hover:text-white'
+              )}
+              style={{
+                background: active ? 'var(--sidebar-active)' : 'transparent',
+                color: active ? 'var(--sidebar-text-active)' : 'var(--sidebar-text)',
+              }}
+              onMouseEnter={e => {
+                if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--sidebar-hover)'
+              }}
+              onMouseLeave={e => {
+                if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent'
+              }}
+            >
+              <Icon className="w-4 h-4 shrink-0" />
+              {label}
+            </Link>
+          )
+        })}
       </nav>
 
-      <div className="p-3 border-t space-y-1">
+      {/* Footer */}
+      <div className="px-3 pb-4 space-y-1 border-t border-white/10 pt-3">
         <a
           href={DOWNLOAD_URL}
-          className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-white"
+          style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
+          <Download className="w-4 h-4 shrink-0" />
           Descargar para Windows
         </a>
-        <p className="text-xs text-gray-500 truncate px-1">{user.email}</p>
+
+        <div className="px-3 py-2">
+          <p className="text-xs truncate" style={{ color: 'var(--sidebar-text)' }}>
+            {user.email}
+          </p>
+        </div>
+
         <button
           onClick={handleLogout}
-          className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-md"
+          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm transition-all duration-150"
+          style={{ color: 'var(--sidebar-text)' }}
+          onMouseEnter={e => {
+            ;(e.currentTarget as HTMLElement).style.background = 'var(--sidebar-hover)'
+            ;(e.currentTarget as HTMLElement).style.color = 'white'
+          }}
+          onMouseLeave={e => {
+            ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+            ;(e.currentTarget as HTMLElement).style.color = 'var(--sidebar-text)'
+          }}
         >
+          <LogOut className="w-4 h-4 shrink-0" />
           Cerrar sesión
         </button>
       </div>

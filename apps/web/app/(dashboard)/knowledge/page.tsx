@@ -39,23 +39,29 @@ export default function KnowledgePage() {
     setUploading(true)
     setError('')
     setSuccess('')
-    const token = await getToken()
-    const form = new FormData()
-    form.append('file', file)
-    const res = await fetch(`${API_URL}/knowledge/upload`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: form,
-    })
-    if (res.ok) {
-      const data = await res.json()
-      setSuccess(`"${data.source_name}" subido — ${data.chunks_created} fragmentos indexados`)
-      loadSources()
-    } else {
-      const data = await res.json().catch(() => ({}))
-      setError(data.detail ?? 'Error al subir el archivo')
+    try {
+      const token = await getToken()
+      const form = new FormData()
+      form.append('file', file)
+      const res = await fetch(`${API_URL}/knowledge/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const chunks = data.chunks_indexed ?? data.chunks_created ?? 0
+        setSuccess(`"${data.source_name}" subido — ${chunks} fragmentos indexados`)
+        loadSources()
+      } else {
+        const data = await res.json().catch(() => ({}))
+        setError(data.detail ?? 'Error al subir el archivo')
+      }
+    } catch (err) {
+      setError('Error de conexión. Intente nuevamente.')
+    } finally {
+      setUploading(false)
     }
-    setUploading(false)
   }
 
   async function handleDelete(sourceName: string) {

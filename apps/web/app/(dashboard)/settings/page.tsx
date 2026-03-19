@@ -63,7 +63,6 @@ export default function SettingsPage() {
 
         <form onSubmit={handleSave}>
           <div style={{ marginBottom: 16 }}>
-            <label className={lbl}>Perfil profesional</label>
             <RoleCombobox value={role} onChange={setRole} />
           </div>
           <div style={{ marginBottom: 16 }}>

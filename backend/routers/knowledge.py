@@ -112,7 +112,7 @@ async def upload_document(
         raise HTTPException(status_code=500, detail="Error al indexar el documento")
 
     logger.info("User %s uploaded '%s' → %d chunks", user.id, source_name, inserted)
-    return {"source_name": source_name, "chunks_indexed": inserted}
+    return {"source_name": source_name, "chunks_indexed": inserted, "chunks_created": inserted}
 
 
 @router.get("/sources")

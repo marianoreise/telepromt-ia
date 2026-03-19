@@ -30,7 +30,7 @@ export default function KnowledgePage() {
     })
     if (res.ok) {
       const data = await res.json()
-      setSources(data.sources ?? [])
+      setSources(Array.isArray(data) ? data : (data.sources ?? []))
     }
     setLoaded(true)
   }

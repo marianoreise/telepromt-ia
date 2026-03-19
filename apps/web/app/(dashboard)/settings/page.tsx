@@ -58,8 +58,6 @@ export default function SettingsPage() {
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Configuración</h1>
 
       <div style={{ background: 'white', borderRadius: 12, padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb' }}>
-        <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Perfil profesional</h2>
-        <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 20 }}>Esta información se usa para personalizar las respuestas del asistente</p>
 
         <form onSubmit={handleSave}>
           <div style={{ marginBottom: 16 }}>

@@ -31,6 +31,9 @@ Superficies:
 - Plan Pago: 0.5 créditos / 30 min de sesión activa
 - Auto-extend al llegar a 30 segundos restantes
 
+## Decisiones de producto — sin excepciones
+- El campo "Perfil Profesional" (h2/título dentro del card de Settings) fue eliminado permanentemente — NO volver a agregarlo. El card de configuración NO tiene título, solo tiene los campos directamente.
+
 ## Reglas de código — sin excepciones
 - TypeScript strict mode · cero `any`
 - Nunca hardcodear credenciales · siempre process.env / os.environ
@@ -43,7 +46,9 @@ Superficies:
 - Desktop: SOLO Windows · nunca generar código macOS/CoreAudio/DMG
 
 ## Equipo de agentes
+TIER 0: project-manager (Opus) — briefing ejecutivo al inicio de sesión
 TIER 1: product-lead (Opus)
+TIER 1.5: functional-analyst (Sonnet) — entre product-lead y architect
 TIER 2: architect · backend · frontend · devops (Sonnet)
 TIER 3: auth-specialist · database-specialist · security-specialist · testing-specialist · ux-reviewer · ui-designer (Sonnet)
 TIER 4: release-manager · deploy-validator (Sonnet)

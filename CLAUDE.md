@@ -38,6 +38,7 @@ Superficies:
 - RLS en TODA tabla de Supabase desde su migración
 - Commits semánticos: tipo(scope): descripción en español
 - Cobertura mínima de tests: 80% en módulos nuevos
+- Al finalizar cada feature o módulo: ejecutar test de regresión completo ANTES del commit · NO commitear si algún test falla
 - API routes Next.js: siempre getUser() · NUNCA getSession()
 - Desktop: SOLO Windows · nunca generar código macOS/CoreAudio/DMG
 

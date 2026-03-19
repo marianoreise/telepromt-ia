@@ -43,16 +43,16 @@ export default function Sidebar({ user }: { user: User }) {
       style={{ background: 'var(--sidebar-bg)' }}
     >
       {/* Logo */}
-      <div className="px-4 py-4 border-b border-white/10" style={{ background: 'white' }}>
+      <div className="px-4 py-5 border-b border-white/10 flex justify-center" style={{ background: 'white' }}>
         <Link href="/dashboard" className="flex items-center gap-3">
           <Image
             src="/logo.png"
             alt="listnr.io"
-            width={42}
-            height={42}
-            className="rounded-lg"
+            width={55}
+            height={55}
+            className="rounded-xl"
           />
-          <span className="font-bold text-xl tracking-tight" style={{ color: '#1B6CA8' }}>
+          <span className="font-bold text-2xl tracking-tight" style={{ color: '#1B6CA8' }}>
             listnr<span style={{ color: '#F5A623' }}>.io</span>
           </span>
         </Link>

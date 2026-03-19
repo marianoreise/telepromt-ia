@@ -38,9 +38,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
       {/* Logo + Brand */}
-      <div className="flex items-center gap-3 mb-8">
-        <Image src="/logo.png" alt="listnr.io" width={52} height={52} className="rounded-xl" />
-        <span className="text-3xl font-bold tracking-tight" style={{ color: '#1B6CA8' }}>
+      <div className="flex items-center gap-4 mb-8">
+        <Image src="/logo.png" alt="listnr.io" width={78} height={78} className="rounded-2xl" />
+        <span className="text-5xl font-bold tracking-tight" style={{ color: '#1B6CA8' }}>
           listnr<span style={{ color: '#F5A623' }}>.io</span>
         </span>
       </div>

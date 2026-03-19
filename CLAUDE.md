@@ -45,9 +45,15 @@ Superficies:
 ## Equipo de agentes
 TIER 1: product-lead (Opus)
 TIER 2: architect · backend · frontend · devops (Sonnet)
-TIER 3: auth-specialist · database-specialist · security-specialist · testing-specialist (Sonnet)
+TIER 3: auth-specialist · database-specialist · security-specialist · testing-specialist · ux-reviewer · ui-designer (Sonnet)
 TIER 4: release-manager · deploy-validator (Sonnet)
 TIER 5: explorer · planner · reviewer · judge (Haiku)
+
+## Reglas de smoke test — sin excepciones
+Cada vez que el humano pida un smoke test (o se ejecute /post-deploy), SIEMPRE invocar los 3 agentes:
+1. `deploy-validator` → validación técnica (HTTP, API, rutas)
+2. `ux-reviewer` → revisión de usabilidad de las pantallas modificadas
+3. `ui-designer` → revisión de consistencia visual con el sistema de diseño
 
 ## Skills disponibles
 Globales (~/.claude/skills/): /security-audit · /test-generator · /git-workflow · /db-migration · /api-spec

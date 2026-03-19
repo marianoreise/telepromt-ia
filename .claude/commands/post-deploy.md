@@ -1,18 +1,40 @@
 ---
-description: Valida que producción está sana después de un deploy. Usar 3-5 minutos después de que el CI/CD termina.
+description: Valida que producción está sana después de un deploy. Usar 3-5 minutos después de que el CI/CD termina. Incluye validación técnica, UX y visual.
 ---
-# /post-deploy
+# /post-deploy (smoke test)
 
-```bash
-FRONTEND_URL="${NEXT_PUBLIC_APP_URL:-https://[proyecto].vercel.app}"
-BACKEND_URL="${NEXT_PUBLIC_API_URL:-https://[backend].railway.app}"
-bash scripts/smoke-test.sh "$FRONTEND_URL" "$BACKEND_URL"
-```
+Ejecutar los 3 pasos en paralelo y luego consolidar resultados.
 
-Invocar `deploy-validator` con las URLs y la versión actual:
-```bash
-git describe --tags --abbrev=0
-```
+## Paso 1 — Validación técnica
+Invocar `deploy-validator` con:
+- Frontend URL: `https://telepromt-ia.vercel.app`
+- Backend URL: `https://backend-production-c314.up.railway.app`
 
-Si PRODUCCION SANA → release cerrado.
-Si PROBLEMAS → invocar `release-manager` con "hacer rollback".
+Verifica: HTTP 200 en rutas clave, autenticación redirige, backend /health OK, rutas OpenAPI presentes.
+
+## Paso 2 — Revisión UX
+Invocar `ux-reviewer` para evaluar las pantallas afectadas por el deploy:
+- Leer los archivos modificados en el último commit (`git diff HEAD~1 --name-only`)
+- Evaluar cada pantalla con interfaz visual usando los 10 principios de Nielsen
+- Detectar regresiones visuales o de usabilidad introducidas por los cambios
+- Entregar reporte con problemas 🔴🟠🟡 y veredicto APROBADO / NECESITA MEJORAS
+
+## Paso 3 — Revisión visual
+Invocar `ui-designer` para verificar consistencia visual:
+- Revisar que los componentes modificados sigan el sistema de diseño de listnr.io
+- Verificar colores, tipografía, espaciados y estados interactivos
+- Detectar inconsistencias entre la web app y el overlay desktop si aplica
+- Entregar lista de inconsistencias visuales ordenadas por severidad
+
+## Paso 4 — Reporte consolidado
+
+| Check | Agente | Estado | Detalle |
+|---|---|---|---|
+| Técnico (HTTP/API) | deploy-validator | ✅/❌ | Rutas verificadas |
+| UX | ux-reviewer | ✅/❌ | Veredicto + issues |
+| Visual | ui-designer | ✅/❌ | Inconsistencias |
+
+**Veredicto final:**
+- Todos verdes → `✅ PRODUCCIÓN SANA — release cerrado`
+- UX/visual con issues menores (🟡) → `⚠️ SANO CON DEUDA — crear tareas de mejora`
+- Técnico rojo o UX/visual 🔴 → `❌ PROBLEMAS — invocar release-manager para rollback`

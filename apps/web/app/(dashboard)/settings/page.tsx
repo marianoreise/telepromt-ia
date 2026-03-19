@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+
+const inputCls = "flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400"
 
 export default function SettingsPage() {
   const supabase = createClient()
@@ -66,20 +66,20 @@ export default function SettingsPage() {
         <CardContent>
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="display_name">Nombre</Label>
-              <Input id="display_name" autoComplete="off" value={form.display_name} onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))} placeholder="Tu nombre completo" />
+              <label htmlFor="display_name" className="text-sm font-medium">Nombre</label>
+              <input id="display_name" className={inputCls} autoComplete="off" value={form.display_name} onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))} placeholder="Tu nombre completo" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">Rol / Posición</Label>
-              <Input id="role" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} placeholder="ej: Senior Software Engineer" />
+              <label htmlFor="role" className="text-sm font-medium">Rol / Posición</label>
+              <input id="role" className={inputCls} autoComplete="off" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} placeholder="ej: Senior Software Engineer" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="company">Empresa objetivo</Label>
-              <Input id="company" value={form.target_company} onChange={e => setForm(f => ({ ...f, target_company: e.target.value }))} placeholder="ej: Google, Mercado Libre" />
+              <label htmlFor="company" className="text-sm font-medium">Empresa objetivo</label>
+              <input id="company" className={inputCls} autoComplete="off" value={form.target_company} onChange={e => setForm(f => ({ ...f, target_company: e.target.value }))} placeholder="ej: Google, Mercado Libre" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lang">Idioma de respuestas</Label>
-              <select id="lang" value={form.preferred_language} onChange={e => setForm(f => ({ ...f, preferred_language: e.target.value }))} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+              <label htmlFor="lang" className="text-sm font-medium">Idioma de respuestas</label>
+              <select id="lang" value={form.preferred_language} onChange={e => setForm(f => ({ ...f, preferred_language: e.target.value }))} className={inputCls}>
                 <option value="es">Español</option>
                 <option value="en">English</option>
               </select>

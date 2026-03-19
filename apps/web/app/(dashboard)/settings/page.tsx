@@ -2,6 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { RoleCombobox } from '@/components/role-combobox'
+
+const lbl = "block text-sm font-medium text-gray-700 mb-1"
 
 export default function SettingsPage() {
   const supabase = useRef(createClient()).current
@@ -49,9 +54,6 @@ export default function SettingsPage() {
     }
   }
 
-  const inp = "block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-  const lbl = "block text-sm font-medium text-gray-700 mb-1"
-
   return (
     <div style={{ maxWidth: 640 }}>
       <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>Configuración</h1>
@@ -63,27 +65,32 @@ export default function SettingsPage() {
         <form onSubmit={handleSave}>
           <div style={{ marginBottom: 16 }}>
             <label htmlFor="f_name" className={lbl}>Nombre</label>
-            <input id="f_name" type="text" className={inp} placeholder="Tu nombre completo" value={displayName} onChange={e => setDisplayName(e.target.value)} />
+            <Input id="f_name" type="text" placeholder="Tu nombre completo" value={displayName} onChange={e => setDisplayName(e.target.value)} />
           </div>
           <div style={{ marginBottom: 16 }}>
-            <label htmlFor="f_role" className={lbl}>Rol / Posición</label>
-            <input id="f_role" type="text" className={inp} placeholder="ej: Senior Software Engineer" value={role} onChange={e => setRole(e.target.value)} />
+            <label className={lbl}>Perfil profesional</label>
+            <RoleCombobox value={role} onChange={setRole} />
           </div>
           <div style={{ marginBottom: 16 }}>
             <label htmlFor="f_company" className={lbl}>Empresa objetivo</label>
-            <input id="f_company" type="text" className={inp} placeholder="ej: Google, Mercado Libre" value={targetCompany} onChange={e => setTargetCompany(e.target.value)} />
+            <Input id="f_company" type="text" placeholder="ej: Google, Mercado Libre" value={targetCompany} onChange={e => setTargetCompany(e.target.value)} />
           </div>
           <div style={{ marginBottom: 20 }}>
             <label htmlFor="f_lang" className={lbl}>Idioma de respuestas</label>
-            <select id="f_lang" className={inp} value={lang} onChange={e => setLang(e.target.value)}>
+            <select
+              id="f_lang"
+              value={lang}
+              onChange={e => setLang(e.target.value)}
+              style={{ display: 'block', width: '100%', height: 40, padding: '0 12px', border: '1px solid #d1d5db', borderRadius: 8, background: 'white', fontSize: 14, outline: 'none' }}
+            >
               <option value="es">Español</option>
               <option value="en">English</option>
             </select>
           </div>
           {error && <p style={{ color: '#ef4444', fontSize: 13, marginBottom: 12 }}>{error}</p>}
-          <button type="submit" disabled={loading} style={{ background: '#1B6CA8', color: 'white', padding: '8px 20px', borderRadius: 8, fontSize: 14, fontWeight: 600, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
+          <Button type="submit" disabled={loading}>
             {saved ? '¡Guardado!' : loading ? 'Guardando...' : 'Guardar cambios'}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

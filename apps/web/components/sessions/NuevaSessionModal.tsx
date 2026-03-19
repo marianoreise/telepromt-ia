@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RoleCombobox } from '@/components/role-combobox'
 import { createClient } from '@/lib/supabase/client'
 import type { SessionDetail, ActiveSessionConflict } from '@/types/session'
 
@@ -111,11 +112,10 @@ export default function NuevaSessionModal({
 
           <div className="space-y-1.5">
             <Label htmlFor="job_title">Puesto</Label>
-            <Input
-              id="job_title"
-              placeholder="Senior Frontend Engineer, Product Manager..."
+            <RoleCombobox
               value={jobTitle}
-              onChange={e => { setJobTitle(e.target.value); setFieldErrors(p => ({ ...p, job_title: undefined })) }}
+              onChange={v => { setJobTitle(v); setFieldErrors(p => ({ ...p, job_title: undefined })) }}
+              placeholder="Seleccioná tu perfil profesional..."
             />
             {fieldErrors.job_title && (
               <p className="text-xs text-red-500">{fieldErrors.job_title}</p>

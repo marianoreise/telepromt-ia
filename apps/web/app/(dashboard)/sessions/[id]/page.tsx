@@ -192,7 +192,7 @@ function ActiveSessionView({
       <Card className="border-0 shadow-sm bg-gradient-to-br from-[#1B6CA8] to-[#7B35A2] text-white">
         <CardContent className="py-10 flex flex-col items-center gap-2">
           <p className="text-7xl font-bold tracking-tight tabular-nums">{formattedTime}</p>
-          <p className="text-white/70 text-sm">minutos restantes</p>
+          <p className="text-white/70 text-sm">tiempo restante</p>
         </CardContent>
       </Card>
 
@@ -270,9 +270,9 @@ function EndedSessionView({
       {/* Mensaje créditos agotados — solo si expiró */}
       {isExpired && (
         <div className="rounded-lg bg-gray-100 px-4 py-3 flex items-center gap-2 text-sm font-medium text-gray-900">
-          Tus créditos para esta sesión se han agotado, si quieres seguir usando
+          Tu sesión gratuita de 10 minutos ha finalizado. Para seguir usando
           <Image src="/logo.png" alt="listnr.io" width={18} height={18} className="rounded inline-block mx-1" />
-          dirigete a la sección{' '}
+          en tus próximas entrevistas, adquirí créditos en la sección{' '}
           <a href="/billing" className="underline" style={{ color: '#1B6CA8' }}>Créditos</a>
         </div>
       )}

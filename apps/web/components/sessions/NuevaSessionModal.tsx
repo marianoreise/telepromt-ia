@@ -147,7 +147,7 @@ export default function NuevaSessionModal({
             </Button>
             <Button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !company.trim() || !jobTitle.trim()}
               style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
             >
               {submitting ? 'Iniciando...' : 'Iniciar sesión'}

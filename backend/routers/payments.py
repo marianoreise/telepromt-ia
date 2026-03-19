@@ -92,7 +92,7 @@ async def create_preference(
         },
         "auto_return": "approved",
         "external_reference": external_reference,
-        "notification_url": f"{os.environ.get('BACKEND_URL', 'https://telepromt-ia.up.railway.app')}/payments/webhook",
+        "notification_url": f"{os.environ.get('BACKEND_URL', 'https://backend-production-c314.up.railway.app')}/payments/webhook",
         "statement_descriptor": "TELEPROMT IA",
     }
 

@@ -42,7 +42,7 @@ const PACKAGES: (Package & { popular?: boolean; description: string })[] = [
   },
 ]
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://telepromt-ia.up.railway.app'
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://backend-production-c314.up.railway.app'
 
 export default function BillingPage() {
   const [balance, setBalance] = useState<number | null>(null)

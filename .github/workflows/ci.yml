@@ -39,7 +39,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://wkpkgvcfkfiqykkicjob.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrcGtndmNma2ZpcXlra2ljam9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTQyNjgsImV4cCI6MjA4OTQzMDI2OH0.pDLmUYKm79bg1hG7r57N2s7X0e00GPNRkSFvcMZfFsA
           NEXT_PUBLIC_APP_URL: https://telepromt-ia.vercel.app
-          NEXT_PUBLIC_API_URL: https://telepromt-ia.up.railway.app
+          NEXT_PUBLIC_API_URL: https://backend-production-c314.up.railway.app
 
   backend:
     name: Backend CI

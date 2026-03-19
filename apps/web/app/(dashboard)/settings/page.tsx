@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const supabase = createClient()
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     display_name: '',
     role: '',
@@ -32,18 +33,22 @@ export default function SettingsPage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
+    setError('')
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    await supabase.from('user_profiles').upsert({
-      user_id: user.id,
-      ...form,
-      onboarding_step: 1,
-    })
+    const { error: upsertError } = await supabase.from('user_profiles').upsert(
+      { user_id: user.id, ...form, onboarding_step: 1 },
+      { onConflict: 'user_id' }
+    )
 
-    setSaved(true)
+    if (upsertError) {
+      setError('Error al guardar. Intentá de nuevo.')
+    } else {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    }
     setLoading(false)
-    setTimeout(() => setSaved(false), 2000)
   }
 
   return (
@@ -76,8 +81,9 @@ export default function SettingsPage() {
                 <option value="en">English</option>
               </select>
             </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
             <Button type="submit" disabled={loading}>
-              {saved ? 'Guardado!' : loading ? 'Guardando...' : 'Guardar cambios'}
+              {saved ? '¡Guardado!' : loading ? 'Guardando...' : 'Guardar cambios'}
             </Button>
           </form>
         </CardContent>

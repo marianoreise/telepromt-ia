@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { RoleCombobox } from '@/components/role-combobox'
 
@@ -64,16 +63,16 @@ export default function SettingsPage() {
 
         <form onSubmit={handleSave}>
           <div style={{ marginBottom: 16 }}>
-            <label htmlFor="f_name" className={lbl}>Nombre</label>
-            <Input id="f_name" type="text" placeholder="Tu nombre completo" value={displayName} onChange={e => setDisplayName(e.target.value)} />
-          </div>
-          <div style={{ marginBottom: 16 }}>
             <label className={lbl}>Perfil profesional</label>
             <RoleCombobox value={role} onChange={setRole} />
           </div>
           <div style={{ marginBottom: 16 }}>
+            <label htmlFor="f_name" className={lbl}>Nombre y Apellido</label>
+            <input id="f_name" type="text" placeholder="Tu nombre completo" value={displayName} onChange={e => setDisplayName(e.target.value)} style={{ display: 'block', width: '100%', height: 40, padding: '0 12px', border: '1px solid #d1d5db', borderRadius: 8, background: 'white', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+          </div>
+          <div style={{ marginBottom: 16 }}>
             <label htmlFor="f_company" className={lbl}>Empresa objetivo</label>
-            <Input id="f_company" type="text" placeholder="ej: Google, Mercado Libre" value={targetCompany} onChange={e => setTargetCompany(e.target.value)} />
+            <input id="f_company" type="text" placeholder="ej: Google, Mercado Libre" value={targetCompany} onChange={e => setTargetCompany(e.target.value)} style={{ display: 'block', width: '100%', height: 40, padding: '0 12px', border: '1px solid #d1d5db', borderRadius: 8, background: 'white', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
           </div>
           <div style={{ marginBottom: 20 }}>
             <label htmlFor="f_lang" className={lbl}>Idioma de respuestas</label>

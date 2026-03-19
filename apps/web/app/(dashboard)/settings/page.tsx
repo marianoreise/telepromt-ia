@@ -34,21 +34,24 @@ export default function SettingsPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setError('Sesión expirada. Recargá la página.'); return }
 
-    const { error: upsertError } = await supabase.from('user_profiles').upsert(
-      { user_id: user.id, ...form, onboarding_step: 1 },
-      { onConflict: 'user_id' }
-    )
+      const { error: upsertError } = await supabase.from('user_profiles').upsert(
+        { user_id: user.id, ...form, onboarding_step: 1 },
+        { onConflict: 'user_id' }
+      )
 
-    if (upsertError) {
-      setError('Error al guardar. Intentá de nuevo.')
-    } else {
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      if (upsertError) {
+        setError(`Error al guardar: ${upsertError.message}`)
+      } else {
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
@@ -63,8 +66,8 @@ export default function SettingsPage() {
         <CardContent>
           <form onSubmit={handleSave} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre</Label>
-              <Input id="name" value={form.display_name} onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))} placeholder="Tu nombre completo" />
+              <Label htmlFor="display_name">Nombre</Label>
+              <Input id="display_name" autoComplete="off" value={form.display_name} onChange={e => setForm(f => ({ ...f, display_name: e.target.value }))} placeholder="Tu nombre completo" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Rol / Posición</Label>

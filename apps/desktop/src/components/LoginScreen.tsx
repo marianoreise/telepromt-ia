@@ -12,8 +12,8 @@ interface LoginScreenProps {
   onLogin: (user: User) => void;
 }
 
-// URL de la web app con parámetro que indica que hay un desktop esperando auth
-const AUTH_URL = 'https://telepromt-ia.vercel.app/dashboard?desktop_auth=true';
+// URL dedicada de auth para desktop — no protegida por middleware, con botón explícito
+const AUTH_URL = 'https://telepromt-ia.vercel.app/auth/desktop';
 
 // Backend API para obtener datos reales del usuario tras autenticación
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://backend-production-c314.up.railway.app';
@@ -201,7 +201,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   lineHeight: 1.5,
                 }}
               >
-                Esperando autenticación en el navegador...
+                Completá el login y hacé clic en "Abrir ListnrIO"
               </p>
             </div>
             <p
@@ -214,7 +214,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 lineHeight: 1.5,
               }}
             >
-              Completá el login en el navegador y volvé aquí.
+              Se abrió el navegador. Iniciá sesión y hacé clic en el botón "Abrir ListnrIO".
             </p>
             <button
               onClick={() => setWaiting(false)}

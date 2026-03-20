@@ -70,8 +70,8 @@ export const RADIUS = {
 // ── Estilos base reutilizables ────────────────────────────────────────────────
 
 export const baseContainer: CSSProperties = {
-  width: '420px',
-  minWidth: '420px',
+  width: '100%',
+  minWidth: '320px',
   maxWidth: '420px',
   fontFamily: FONT.family,
   fontSize: FONT.sizeBase,
@@ -83,7 +83,7 @@ export const baseContainer: CSSProperties = {
   borderRadius: RADIUS.xl,
   userSelect: 'none',
   boxSizing: 'border-box',
-  overflow: 'hidden',
+  overflow: 'clip',
   border: '1px solid rgba(255,255,255,0.6)',
 };
 

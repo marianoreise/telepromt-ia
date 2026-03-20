@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import type { User } from '../types';
 import { COLORS, FONT, RADIUS, btnPrimary, baseContainer, header, iconBtn } from '../theme';
 
@@ -12,7 +13,7 @@ interface LoginScreenProps {
 }
 
 // URL de la web app con parámetro que indica que hay un desktop esperando auth
-const AUTH_URL = 'https://listnr.io/dashboard?desktop_auth=true';
+const AUTH_URL = 'https://telepromt-ia.vercel.app/dashboard?desktop_auth=true';
 
 // Backend API para obtener datos reales del usuario tras autenticación
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://backend-production-c314.up.railway.app';
@@ -82,24 +83,24 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       });
   };
 
-  const handleClose = async () => {
-    try {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window');
-      await getCurrentWindow().close();
-    } catch {
-      // Fallback sin Tauri
-    }
+  const handleClose = () => {
+    invoke('close_window').catch(() => getCurrentWindow().close().catch(() => {}));
   };
 
-  const handleDrag = () => {
-    invoke('start_dragging').catch(() => {});
+  const handleDrag = async () => {
+    try {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window');
+      await getCurrentWindow().startDragging();
+    } catch {
+      invoke('start_dragging').catch(() => {});
+    }
   };
 
   return (
     <div
       style={{
         ...baseContainer,
-        minHeight: '320px',
+        minHeight: '400px',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -111,7 +112,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <button
-            onMouseDown={handleDrag}
+            onMouseDown={(e) => { e.stopPropagation(); handleDrag(); }}
             style={{ ...iconBtn }}
             title="Mover ventana"
           >
@@ -119,6 +120,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           </button>
           <button
             onClick={handleClose}
+            onMouseDown={(e) => e.stopPropagation()}
             style={{ ...iconBtn, color: COLORS.textSecondary }}
             title="Cerrar"
           >
@@ -151,7 +153,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           <img
             src="/logo.png"
             alt="ListnrIO"
-            style={{ width: '120px', height: '120px', objectFit: 'contain', marginBottom: '4px' }}
+            style={{ width: '120px', height: '120px', objectFit: 'contain', marginBottom: '4px', background: 'white', borderRadius: '12px', padding: '8px' }}
           />
         </div>
 

@@ -93,6 +93,12 @@ fn start_dragging(window: WebviewWindow) -> Result<(), String> {
     window.start_dragging().map_err(|e| e.to_string())
 }
 
+// ── Comando: close_window ─────────────────────────────────────
+#[tauri::command]
+fn close_window(window: WebviewWindow) -> Result<(), String> {
+    window.close().map_err(|e| e.to_string())
+}
+
 // ── Helpers para deep link ────────────────────────────────────
 /// Extrae el valor de un query param de una URL raw (sin dependencias extra).
 fn query_param<'a>(query: &'a str, key: &str) -> Option<String> {
@@ -149,6 +155,7 @@ pub fn run() {
             capture_screenshot,
             open_url,
             start_dragging,
+            close_window,
         ])
         .setup(|app| {
             let window = app.get_webview_window("main").unwrap();
@@ -156,8 +163,8 @@ pub fn run() {
             // Feature 1: Invisible en screen share
             apply_screen_capture_exclusion(&window);
 
-            // Feature 4: Mouse transparente al inicio
-            let _ = window.set_ignore_cursor_events(true);
+            // Feature 4: Mouse transparente — solo activo durante sesión activa, no al inicio
+            let _ = window.set_ignore_cursor_events(false);
 
             // ── Deep link handler: listnr://auth?token=...&refresh=... ──
             let app_handle = app.handle().clone();

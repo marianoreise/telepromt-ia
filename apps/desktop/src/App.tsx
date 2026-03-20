@@ -102,7 +102,7 @@ export default function App() {
     } else {
       // Calcular altura según pantalla
       const heights: Partial<Record<AppScreen, number>> = {
-        login: 320,
+        login: 400,
         main: 360,
         wizard: 520,
         activate: 460,

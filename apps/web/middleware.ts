@@ -30,7 +30,8 @@ export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
   if (PROTEGIDAS.some(r => path.startsWith(r)) && !user) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    const next = request.nextUrl.pathname + request.nextUrl.search
+    return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(next)}`, request.url))
   }
 
   if (SOLO_GUEST.some(r => path.startsWith(r)) && user) {

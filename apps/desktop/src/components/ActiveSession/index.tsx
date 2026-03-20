@@ -68,6 +68,14 @@ export function ActiveSession({
   const isFree = session.type === 'free';
   const maxSeconds = isFree ? 10 * 60 : 0; // 10 min para free
 
+  // Activar mouse pass-through al entrar en sesión activa, desactivar al salir
+  useEffect(() => {
+    invoke('set_ignore_mouse', { ignore: true }).catch(() => {});
+    return () => {
+      invoke('set_ignore_mouse', { ignore: false }).catch(() => {});
+    };
+  }, []);
+
   useEffect(() => {
     timerRef.current = setInterval(() => {
       setElapsed((prev) => {

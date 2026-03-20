@@ -98,6 +98,8 @@ async def stt_endpoint(ws: WebSocket) -> None:
         billing.start()
 
         # ── 4. Background task: pipe Deepgram transcripts → WS + trigger AI ─
+        last_transcript: list[str] = ['']  # mutable container para compartir entre tareas
+
         async def process_transcripts() -> None:
             async for result in dg_session.transcripts():
                 await ws.send_json({
@@ -106,7 +108,11 @@ async def stt_endpoint(ws: WebSocket) -> None:
                     "is_final": result.is_final,
                 })
 
-                # Trigger AI only on speech_final questions
+                # Guardar el último transcript final para request_ai manual
+                if result.is_final and result.text.strip():
+                    last_transcript[0] = result.text
+
+                # Trigger AI automático en speech_final con pregunta detectada
                 if result.speech_final and is_question(result.text):
                     asyncio.create_task(
                         _stream_ai_to_ws(ws, user_id, result.text, language)
@@ -134,8 +140,22 @@ async def stt_endpoint(ws: WebSocket) -> None:
             if "bytes" in msg and msg["bytes"]:
                 await dg_session.send_audio(msg["bytes"])
             elif "text" in msg:
-                if msg["text"] == "stop":
+                text = msg["text"]
+                if text == "stop":
                     break
+                # Mensajes JSON del frontend
+                try:
+                    data = json.loads(text)
+                    if data.get("type") == "request_ai":
+                        question = last_transcript[0].strip()
+                        if question:
+                            asyncio.create_task(
+                                _stream_ai_to_ws(ws, user_id, question, language)
+                            )
+                        else:
+                            await ws.send_json({"type": "warn", "message": "Sin transcripción disponible"})
+                except (json.JSONDecodeError, KeyError):
+                    pass
 
     except WebSocketDisconnect:
         logger.info("Session %s: client disconnected", session_id)

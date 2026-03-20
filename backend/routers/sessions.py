@@ -63,7 +63,22 @@ class SessionEndResponse(BaseModel):
     credits_used: float
 
 
-# ── Endpoints existentes ───────────────────────────────────────────────────
+# ── Endpoints ──────────────────────────────────────────────────────────────
+
+
+@router.get("/me")
+async def get_me(user: UserContext = Depends(get_current_user)) -> dict:
+    """Devuelve id, email y créditos del usuario autenticado. Usado por la app desktop."""
+    db = _get_supabase()
+    result = (
+        db.from_("user_credits")
+        .select("balance")
+        .eq("user_id", user.id)
+        .single()
+        .execute()
+    )
+    balance = float(result.data["balance"]) if result.data else 0.0
+    return {"id": user.id, "email": user.email, "credits": balance}
 
 
 @router.get("/balance", response_model=BalanceResponse)

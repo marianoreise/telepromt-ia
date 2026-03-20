@@ -1,5 +1,6 @@
 // AnswerPanel.tsx — Panel de respuestas IA con navegación entre respuestas
 
+import { useRef, useState } from 'react';
 import type { AIMessage } from '../../types';
 import { COLORS, FONT, RADIUS } from '../../theme';
 
@@ -22,6 +23,26 @@ export function AnswerPanel({
   onClear,
   onClose,
 }: AnswerPanelProps) {
+  const [panelHeight, setPanelHeight] = useState(240);
+  const dragStartY = useRef(0);
+  const dragStartH = useRef(0);
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    dragStartY.current = e.clientY;
+    dragStartH.current = panelHeight;
+    const onMove = (ev: MouseEvent) => {
+      const delta = ev.clientY - dragStartY.current;
+      setPanelHeight(Math.max(120, Math.min(600, dragStartH.current + delta)));
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
   const total = messages.length + (isStreaming ? 1 : 0);
   const hasContent = total > 0;
 
@@ -41,8 +62,9 @@ export function AnswerPanel({
     display: 'flex',
     flexDirection: 'column',
     gap: '8px',
-    maxHeight: '280px',
+    height: `${panelHeight}px`,
     overflow: 'hidden',
+    position: 'relative',
   };
 
   const headerStyle: React.CSSProperties = {
@@ -78,14 +100,14 @@ export function AnswerPanel({
 
   const bodyStyle: React.CSSProperties = {
     overflowY: 'auto',
-    maxHeight: '210px',
+    flex: 1,
     scrollbarWidth: 'thin',
     scrollbarColor: 'rgba(255,255,255,0.2) transparent',
   };
 
   const textStyle: React.CSSProperties = {
     fontFamily: FONT.family,
-    fontSize: FONT.sizeSm,
+    fontSize: FONT.sizeMd,
     color: 'rgba(255,255,255,0.88)',
     lineHeight: 1.6,
     margin: 0,
@@ -113,7 +135,7 @@ export function AnswerPanel({
 
   // Indicador visual de streaming
   const streamingDots = isStreaming ? (
-    <span style={{ color: 'rgba(255,255,255,0.4)' }}>{' '}•••</span>
+    <span style={{ color: 'rgba(255,255,255,0.60)' }}>{' '}•••</span>
   ) : null;
 
   if (!hasContent) {
@@ -127,7 +149,7 @@ export function AnswerPanel({
               fontWeight: FONT.weightSemibold,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
-              color: 'rgba(255,255,255,0.4)',
+              color: 'rgba(255,255,255,0.60)',
             }}
           >
             Respuesta IA
@@ -159,7 +181,7 @@ export function AnswerPanel({
             style={{
               fontFamily: FONT.family,
               fontSize: FONT.sizeXs,
-              color: 'rgba(255,255,255,0.4)',
+              color: 'rgba(255,255,255,0.60)',
             }}
           >
             {currentIndex + 1} / {total}
@@ -182,7 +204,7 @@ export function AnswerPanel({
         </div>
       </div>
 
-      {/* Cuerpo */}
+      {/* Cuerpo scrolleable */}
       <div style={bodyStyle}>
         {showStreaming ? (
           <div>
@@ -206,6 +228,28 @@ export function AnswerPanel({
             <p style={textStyle}>{current.answer}</p>
           </div>
         ) : null}
+      </div>
+
+      {/* Handle de resize — esquina inferior derecha */}
+      <div
+        onMouseDown={handleResizeStart}
+        style={{
+          position: 'absolute',
+          bottom: '4px',
+          right: '4px',
+          width: '16px',
+          height: '16px',
+          cursor: 'nwse-resize',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'rgba(255,255,255,0.3)',
+          fontSize: '12px',
+          userSelect: 'none',
+        }}
+        title="Arrastrar para redimensionar"
+      >
+        ⟱
       </div>
     </div>
   );

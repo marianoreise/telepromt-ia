@@ -20,6 +20,7 @@ export interface User {
   id: string;
   email: string;
   credits: number;
+  accessToken?: string;
 }
 
 export interface SessionConfig {

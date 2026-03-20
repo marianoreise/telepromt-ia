@@ -43,7 +43,7 @@ export function TranscriptPanel({ transcript, onClear, onCollapse, onClose }: Tr
     fontWeight: FONT.weightSemibold,
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
-    color: 'rgba(255,255,255,0.45)',
+    color: 'rgba(255,255,255,0.65)',
   };
 
   const scrollAreaStyle: React.CSSProperties = {
@@ -56,7 +56,7 @@ export function TranscriptPanel({ transcript, onClear, onCollapse, onClose }: Tr
 
   const textStyle: React.CSSProperties = {
     fontFamily: FONT.family,
-    fontSize: FONT.sizeSm,
+    fontSize: FONT.sizeBase,
     color: transcript.isFinal ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)',
     lineHeight: 1.5,
     margin: 0,

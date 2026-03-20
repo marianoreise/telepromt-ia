@@ -39,10 +39,8 @@ export function Header({ user, onSetScreen, onLogout, previousScreen = 'main' }:
   return (
     <>
       <div
-        style={{
-          ...header,
-          WebkitAppRegion: 'drag',
-        } as React.CSSProperties}
+        style={header}
+        data-tauri-drag-region
       >
         {/* Logo */}
         <div
@@ -56,7 +54,11 @@ export function Header({ user, onSetScreen, onLogout, previousScreen = 'main' }:
             flexShrink: 0,
           }}
         >
-          <span style={{ fontSize: '16px' }}>🦜</span>
+          <img
+            src="/logo.png"
+            alt="ListnrIO"
+            style={{ width: '20px', height: '20px', objectFit: 'contain' }}
+          />
           <span>ListnrIO</span>
         </div>
 
@@ -66,8 +68,7 @@ export function Header({ user, onSetScreen, onLogout, previousScreen = 'main' }:
             display: 'flex',
             alignItems: 'center',
             gap: '4px',
-            WebkitAppRegion: 'no-drag',
-          } as React.CSSProperties}
+          }}
         >
           {/* Créditos */}
           {user && (
@@ -106,22 +107,22 @@ export function Header({ user, onSetScreen, onLogout, previousScreen = 'main' }:
             </button>
           )}
 
-          {/* Mover ventana ⊕ */}
+          {/* Mover ventana ⠿ */}
           <button
             onMouseDown={handleDrag}
             style={{ ...iconBtn }}
             title="Mover ventana"
           >
-            ⊕
+            ⠿
           </button>
 
-          {/* Colapsar ^ */}
+          {/* Colapsar ∧ */}
           <button
             onClick={handleCollapse}
             style={{ ...iconBtn }}
             title="Colapsar"
           >
-            ^
+            ∧
           </button>
 
           {/* Cerrar ✕ */}

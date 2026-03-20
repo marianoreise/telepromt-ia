@@ -3,6 +3,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
+import { getCurrentWindow, currentMonitor } from '@tauri-apps/api/window';
+import { LogicalSize, LogicalPosition } from '@tauri-apps/api/dpi';
 
 import type {
   AppScreen,
@@ -80,6 +82,36 @@ export default function App() {
     setTranscript({ text: '', isFinal: false });
     setAiMessages([]);
   }, []);
+
+  // ── Redimensionar ventana según pantalla ──────────────────────────────────────
+  // Sesión activa → barra horizontal delgada en la parte superior
+  // Resto → panel compacto 420px
+
+  useEffect(() => {
+    const win = getCurrentWindow();
+    if (screen === 'session-active') {
+      currentMonitor().then((monitor) => {
+        const scaleFactor = monitor?.scaleFactor ?? 1;
+        const screenWidth = monitor?.size.width ?? 1920;
+        const logicalWidth = Math.floor(screenWidth / scaleFactor);
+        win.setSize(new LogicalSize(logicalWidth, 56)).catch(() => {});
+        win.setPosition(new LogicalPosition(0, 0)).catch(() => {});
+      }).catch(() => {});
+    } else if (screen === 'collapsed') {
+      win.setSize(new LogicalSize(56, 56)).catch(() => {});
+    } else {
+      // Calcular altura según pantalla
+      const heights: Partial<Record<AppScreen, number>> = {
+        login: 320,
+        main: 360,
+        wizard: 520,
+        activate: 460,
+      };
+      const h = heights[screen] ?? 480;
+      win.setSize(new LogicalSize(420, h)).catch(() => {});
+      win.setPosition(new LogicalPosition(20, 80)).catch(() => {});
+    }
+  }, [screen]);
 
   // ── Selección de tipo de sesión desde MainScreen ──────────────────────────────
 
@@ -243,6 +275,7 @@ export default function App() {
           aiMessages={aiMessages}
           isListening={isListening}
           wsRef={wsRef}
+          accessToken={user?.accessToken ?? ''}
           onSetTranscript={setTranscript}
           onAddAIMessage={handleAddAIMessage}
           onSetAIMessages={setAiMessages}

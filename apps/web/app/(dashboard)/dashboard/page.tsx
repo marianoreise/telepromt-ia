@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Download, Zap, Clock, CheckCircle2, Circle } from 'lucide-react'
+import { DesktopAuthRedirect } from '@/components/DesktopAuthRedirect'
 
 const DOWNLOAD_URL = 'https://github.com/marianoreise/telepromt-ia/releases/latest/download/Telepromt.IA_0.1.0_x64-setup.exe'
 
@@ -22,7 +23,26 @@ async function getUserData() {
   }
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ desktop_auth?: string }>
+}) {
+  // Si viene desde la app desktop, emitir el deep link de autenticación
+  const params = await searchParams
+  if (params.desktop_auth === 'true') {
+    const supabase = await createClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session?.access_token) {
+      return (
+        <DesktopAuthRedirect
+          accessToken={session.access_token}
+          refreshToken={session.refresh_token ?? ''}
+        />
+      )
+    }
+  }
+
   const data = await getUserData()
   if (!data) return null
 

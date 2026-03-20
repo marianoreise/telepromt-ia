@@ -128,7 +128,7 @@ export function Toolbar({
 
   return (
     <div style={{ position: 'relative' }}>
-      <div style={{ ...overlayBar, justifyContent: 'space-between' }}>
+      <div style={{ ...overlayBar, justifyContent: 'space-between', width: '100%' }} data-tauri-drag-region>
         {/* Grupo izquierda: audio controles */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           {/* Soundwave / Transcript toggle */}
@@ -143,12 +143,12 @@ export function Toolbar({
           {/* Audio sistema */}
           <button
             onClick={onToggleSystemAudio}
-            style={iconOnlyBtn(isSystemAudioOn, isSystemAudioOn)}
-            title={isSystemAudioOn ? 'Audio sistema activo' : 'Audio sistema inactivo'}
+            style={iconOnlyBtn()}
+            title={isSystemAudioOn ? 'Audio sistema activo (click para pausar)' : 'Audio sistema pausado (click para activar)'}
           >
-            {isSystemAudioOn ? (
-              <span style={{ position: 'relative', display: 'inline-flex' }}>
-                📋
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              🖥
+              {isSystemAudioOn && (
                 <span
                   style={{
                     position: 'absolute',
@@ -160,19 +160,32 @@ export function Toolbar({
                     background: COLORS.accentRed,
                   }}
                 />
-              </span>
-            ) : (
-              '📋'
-            )}
+              )}
+            </span>
           </button>
 
           {/* Micrófono */}
           <button
             onClick={onToggleMic}
-            style={iconOnlyBtn(isMicOn, !isMicOn)}
-            title={isMicOn ? 'Micrófono activo' : 'Micrófono inactivo'}
+            style={iconOnlyBtn()}
+            title={isMicOn ? 'Micrófono activo (click para pausar)' : 'Micrófono pausado (click para activar)'}
           >
-            🎤
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              🎤
+              {isMicOn && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '-1px',
+                    right: '-2px',
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: COLORS.accentRed,
+                  }}
+                />
+              )}
+            </span>
           </button>
         </div>
 
@@ -228,13 +241,13 @@ export function Toolbar({
             ⋮
           </button>
 
-          {/* Drag ⊕ */}
+          {/* Drag ⠿ */}
           <button
             onMouseDown={handleDrag}
             style={iconOnlyBtn()}
             title="Mover ventana"
           >
-            ⊕
+            ⠿
           </button>
 
           {/* Colapsar */}
@@ -243,7 +256,7 @@ export function Toolbar({
             style={iconOnlyBtn()}
             title="Colapsar"
           >
-            ^
+            ∧
           </button>
 
           {/* Cerrar */}

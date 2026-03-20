@@ -187,7 +187,7 @@ export function Step2Config({ config, onChange, onNext, onBack }: Step2Props) {
           onClick={onNext}
           style={{ ...btnPrimary, fontFamily: FONT.family, borderRadius: RADIUS.md }}
         >
-          Crear sesión →
+          {(config.type === 'free' ? 'Crear sesión gratuita' : 'Crear sesión completa') + ' →'}
         </button>
       </div>
     </div>

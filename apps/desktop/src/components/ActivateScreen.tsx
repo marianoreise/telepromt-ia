@@ -1,7 +1,7 @@
 // ActivateScreen.tsx — Confirmación antes de activar la sesión
 
 import type { SessionConfig } from '../types';
-import { COLORS, FONT, RADIUS, btnPrimary, btnSecondary, baseContainer } from '../theme';
+import { COLORS, FONT, RADIUS, btnPrimary, btnSecondary } from '../theme';
 
 interface ActivateScreenProps {
   config: Partial<SessionConfig>;
@@ -15,7 +15,6 @@ export function ActivateScreen({ config, onActivate, onBack }: ActivateScreenPro
   return (
     <div
       style={{
-        ...baseContainer,
         display: 'flex',
         flexDirection: 'column',
         padding: '24px 20px',

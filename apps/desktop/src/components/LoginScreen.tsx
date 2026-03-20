@@ -14,6 +14,9 @@ interface LoginScreenProps {
 // URL de la web app con parámetro que indica que hay un desktop esperando auth
 const AUTH_URL = 'https://listnr.io/dashboard?desktop_auth=true';
 
+// Backend API para obtener datos reales del usuario tras autenticación
+const API_URL = import.meta.env.VITE_API_URL ?? 'https://backend-production-c314.up.railway.app';
+
 // Usuario mock para fallback en desarrollo (cuando Tauri no está disponible)
 const MOCK_USER: User = {
   id: 'mock',
@@ -35,16 +38,23 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
         const { listen } = await import('@tauri-apps/api/event');
         unlisten = await listen<{ access_token: string; refresh_token: string }>(
           'auth-callback',
-          (event) => {
-            const { access_token, refresh_token: _refresh } = event.payload;
-            // Con los tokens podemos inicializar supabase.auth.setSession() en el futuro.
-            // Por ahora creamos un user básico — el email y créditos reales se cargarán
-            // tras hidratación de Supabase (iteración siguiente).
-            onLogin({
-              id: access_token.slice(0, 16),
-              email: 'usuario@listnr.io',
-              credits: 0,
-            });
+          async (event) => {
+            const { access_token } = event.payload;
+            try {
+              const res = await fetch(`${API_URL}/sessions/me`, {
+                headers: { Authorization: `Bearer ${access_token}` },
+              });
+              if (res.ok) {
+                const data = await res.json() as { id: string; email: string; credits: number };
+                onLogin({ id: data.id, email: data.email, credits: Math.floor(data.credits), accessToken: access_token });
+              } else {
+                // Token válido pero el backend falló — login con datos mínimos
+                onLogin({ id: access_token.slice(0, 16), email: '', credits: 0, accessToken: access_token });
+              }
+            } catch {
+              // Sin conexión al backend — login con datos mínimos
+              onLogin({ id: access_token.slice(0, 16), email: '', credits: 0, accessToken: access_token });
+            }
           }
         );
       } catch {
@@ -96,26 +106,16 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
     >
       {/* Mini header solo con controles de ventana */}
       <div
-        style={{
-          ...header,
-          justifyContent: 'flex-end',
-          WebkitAppRegion: 'drag',
-        } as React.CSSProperties}
+        style={{ ...header, justifyContent: 'flex-end' }}
+        data-tauri-drag-region
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            WebkitAppRegion: 'no-drag',
-          } as React.CSSProperties}
-        >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <button
             onMouseDown={handleDrag}
             style={{ ...iconBtn }}
             title="Mover ventana"
           >
-            ⊕
+            ⠿
           </button>
           <button
             onClick={handleClose}
@@ -148,17 +148,11 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             gap: '8px',
           }}
         >
-          <span
-            style={{
-              fontFamily: FONT.family,
-              fontSize: FONT.size2xl,
-              fontWeight: FONT.weightBold,
-              color: COLORS.textPrimary,
-              letterSpacing: '-0.02em',
-            }}
-          >
-            ListnrIO
-          </span>
+          <img
+            src="/logo.png"
+            alt="ListnrIO"
+            style={{ width: '80px', height: '80px', objectFit: 'contain', marginBottom: '4px' }}
+          />
         </div>
 
         {/* Texto descriptivo */}
@@ -205,7 +199,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                   lineHeight: 1.5,
                 }}
               >
-                Esperando autenticacion en el navegador...
+                Esperando autenticación en el navegador...
               </p>
             </div>
             <button
@@ -235,7 +229,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               borderRadius: RADIUS.lg,
             }}
           >
-            Iniciar sesion
+            Iniciar sesión
           </button>
         )}
 
@@ -250,7 +244,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
               margin: 0,
             }}
           >
-            Se abrira el navegador para verificar tu cuenta.
+            Se abrirá el navegador para verificar tu cuenta.
           </p>
         )}
       </div>

@@ -196,5 +196,5 @@ pub fn run() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error al iniciar Telepromt IA");
+        .expect("error al iniciar ListnrIO");
 }

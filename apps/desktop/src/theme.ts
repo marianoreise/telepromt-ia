@@ -76,10 +76,15 @@ export const baseContainer: CSSProperties = {
   fontFamily: FONT.family,
   fontSize: FONT.sizeBase,
   color: COLORS.textPrimary,
-  background: COLORS.bgWindow,
+  background: 'rgba(255,255,255,0.96)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)',
+  borderRadius: RADIUS.xl,
   userSelect: 'none',
   boxSizing: 'border-box',
   overflow: 'hidden',
+  border: '1px solid rgba(255,255,255,0.6)',
 };
 
 export const header: CSSProperties = {
@@ -245,7 +250,7 @@ export const overlayBar: CSSProperties = {
   padding: '6px 10px',
   background: COLORS.bgOverlay,
   backdropFilter: 'blur(12px)',
-  flexWrap: 'wrap' as const,
+  flexWrap: 'nowrap' as const,
 };
 
 export const overlayPanel: CSSProperties = {

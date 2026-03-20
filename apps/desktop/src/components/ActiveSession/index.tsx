@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { LogicalSize } from '@tauri-apps/api/dpi';
 import type { Session, Transcript, AIMessage, AppScreen } from '../../types';
 import { Toolbar } from './Toolbar';
 import { TranscriptPanel } from './TranscriptPanel';
@@ -14,6 +16,7 @@ interface ActiveSessionProps {
   aiMessages: AIMessage[];
   isListening: boolean;
   wsRef: React.MutableRefObject<WebSocket | null>;
+  accessToken: string;
   onSetTranscript: (t: Transcript) => void;
   onAddAIMessage: (msg: AIMessage) => void;
   onSetAIMessages: (msgs: AIMessage[]) => void;
@@ -24,12 +27,19 @@ interface ActiveSessionProps {
   onLogout: () => void;
 }
 
+// Mapea el idioma de la sesión al código que espera el backend
+function toLanguageCode(lang: string): string {
+  if (lang === 'ingles') return 'en';
+  return 'es'; // castellano y cast-eng → es
+}
+
 export function ActiveSession({
   session,
   transcript,
   aiMessages,
   isListening: _isListening,
   wsRef,
+  accessToken,
   onSetTranscript,
   onAddAIMessage,
   onSetAIMessages,
@@ -106,7 +116,14 @@ export function ActiveSession({
     const ws = new WebSocket(`${backendUrl}/ws/stt`);
     wsRef.current = ws;
 
-    ws.onopen = () => onSetIsListeningRef.current(true);
+    ws.onopen = () => {
+      // Handshake obligatorio: primer mensaje debe ser { token, language }
+      ws.send(JSON.stringify({
+        token: accessToken,
+        language: toLanguageCode(session.language),
+      }));
+      onSetIsListeningRef.current(true);
+    };
     ws.onclose = () => onSetIsListeningRef.current(false);
     ws.onerror = () => onSetIsListeningRef.current(false);
 
@@ -196,8 +213,22 @@ export function ActiveSession({
     setIsStreaming(false);
   };
 
+  // Auto-ajustar altura de ventana Tauri cuando crece el contenido
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      const h = Math.max(56, el.offsetHeight);
+      const w = window.innerWidth || 1920;
+      getCurrentWindow().setSize(new LogicalSize(w, h)).catch(() => {});
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', userSelect: 'none' }}>
+    <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', userSelect: 'none', width: '100vw' }}>
       {/* Barra principal */}
       <Toolbar
         session={session}

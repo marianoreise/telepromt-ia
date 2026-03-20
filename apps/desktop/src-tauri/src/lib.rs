@@ -144,11 +144,35 @@ pub fn run() {
     use tauri_plugin_deep_link::DeepLinkExt;
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             // Si ya hay una instancia corriendo, traer su ventana al frente
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.show();
                 let _ = window.set_focus();
+            }
+            // El deep link llega como argumento al segundo proceso bloqueado.
+            // on_open_url NO se dispara en ese caso — hay que procesarlo aquí.
+            for arg in &argv {
+                let is_listnr = arg.starts_with("listnr://");
+                let is_telepromt = arg.starts_with("telepromt://");
+                if !is_listnr && !is_telepromt {
+                    continue;
+                }
+                let query = match arg.find('?') {
+                    Some(pos) => &arg[pos + 1..],
+                    None => continue,
+                };
+                let access_token = query_param(query, "token")
+                    .or_else(|| query_param(query, "access_token"));
+                let refresh_token = query_param(query, "refresh")
+                    .or_else(|| query_param(query, "refresh_token"));
+                if let Some(access) = access_token {
+                    let payload = serde_json::json!({
+                        "access_token": access,
+                        "refresh_token": refresh_token.unwrap_or_default(),
+                    });
+                    let _ = app.emit("auth-callback", payload);
+                }
             }
         }))
         .plugin(tauri_plugin_shell::init())

@@ -1,6 +1,6 @@
 // AnswerPanel.tsx — Panel de respuestas IA con navegación entre respuestas
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import type { AIMessage } from '../../types';
 import { COLORS, FONT, RADIUS } from '../../theme';
 
@@ -23,25 +23,8 @@ export function AnswerPanel({
   onClear,
   onClose,
 }: AnswerPanelProps) {
-  const [panelHeight, setPanelHeight] = useState(240);
-  const dragStartY = useRef(0);
-  const dragStartH = useRef(0);
-
-  const handleResizeStart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    dragStartY.current = e.clientY;
-    dragStartH.current = panelHeight;
-    const onMove = (ev: MouseEvent) => {
-      const delta = ev.clientY - dragStartY.current;
-      setPanelHeight(Math.max(120, Math.min(600, dragStartH.current + delta)));
-    };
-    const onUp = () => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  };
+  const [expanded, setExpanded] = useState(false);
+  const panelHeight = expanded ? 480 : 240;
 
   const total = messages.length + (isStreaming ? 1 : 0);
   const hasContent = total > 0;
@@ -230,27 +213,26 @@ export function AnswerPanel({
         ) : null}
       </div>
 
-      {/* Handle de resize — esquina inferior derecha */}
-      <div
-        onMouseDown={handleResizeStart}
+      {/* Toggle expand/colapsar — esquina inferior derecha */}
+      <button
+        onClick={() => setExpanded((v) => !v)}
         style={{
           position: 'absolute',
           bottom: '4px',
           right: '4px',
-          width: '16px',
-          height: '16px',
-          cursor: 'nwse-resize',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'rgba(255,255,255,0.3)',
-          fontSize: '12px',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          color: 'rgba(255,255,255,0.35)',
+          fontSize: '13px',
+          padding: '2px',
+          lineHeight: 1,
           userSelect: 'none',
         }}
-        title="Arrastrar para redimensionar"
+        title={expanded ? 'Reducir panel' : 'Expandir panel'}
       >
-        ⟱
-      </div>
+        {expanded ? '⤡' : '⤢'}
+      </button>
     </div>
   );
 }

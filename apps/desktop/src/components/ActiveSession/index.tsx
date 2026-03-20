@@ -6,7 +6,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { LogicalSize } from '@tauri-apps/api/dpi';
 import type { Session, Transcript, AIMessage, AppScreen } from '../../types';
 import { Toolbar } from './Toolbar';
-import { TranscriptPanel } from './TranscriptPanel';
+import { TranscriptStrip } from './TranscriptStrip';
 import { AnswerPanel } from './AnswerPanel';
 import { ChatPanel } from './ChatPanel';
 
@@ -49,7 +49,6 @@ export function ActiveSession({
   onSetScreen: _onSetScreen,
   onLogout,
 }: ActiveSessionProps) {
-  const [showTranscript, setShowTranscript] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showAnswers, setShowAnswers] = useState(false);
   const [isSystemAudioOn, setIsSystemAudioOn] = useState(true);
@@ -202,9 +201,6 @@ export function ActiveSession({
     }
   };
 
-  const handleClearTranscript = () => {
-    onSetTranscript({ text: '', isFinal: false });
-  };
 
   const handleClearAnswers = () => {
     onSetAIMessages([]);
@@ -235,9 +231,7 @@ export function ActiveSession({
         timerDisplay={timerDisplay}
         isSystemAudioOn={isSystemAudioOn}
         isMicOn={isMicOn}
-        showTranscript={showTranscript}
         showChat={showChat}
-        onToggleTranscript={() => setShowTranscript((v) => !v)}
         onToggleSystemAudio={() => setIsSystemAudioOn((v) => !v)}
         onToggleMic={() => setIsMicOn((v) => !v)}
         onRequestAI={handleRequestAI}
@@ -248,15 +242,8 @@ export function ActiveSession({
         onLogout={onLogout}
       />
 
-      {/* Panel de transcripción */}
-      {showTranscript && (
-        <TranscriptPanel
-          transcript={transcript}
-          onClear={handleClearTranscript}
-          onCollapse={() => setShowTranscript(false)}
-          onClose={() => setShowTranscript(false)}
-        />
-      )}
+      {/* Strip de transcripción — siempre visible */}
+      <TranscriptStrip transcript={transcript} />
 
       {/* Panel de respuestas IA */}
       {showAnswers && (

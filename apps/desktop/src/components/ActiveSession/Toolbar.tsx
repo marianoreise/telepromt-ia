@@ -10,9 +10,7 @@ interface ToolbarProps {
   timerDisplay: string;
   isSystemAudioOn: boolean;
   isMicOn: boolean;
-  showTranscript: boolean;
   showChat: boolean;
-  onToggleTranscript: () => void;
   onToggleSystemAudio: () => void;
   onToggleMic: () => void;
   onRequestAI: () => void;
@@ -28,9 +26,7 @@ export function Toolbar({
   timerDisplay,
   isSystemAudioOn,
   isMicOn,
-  showTranscript,
   showChat,
-  onToggleTranscript,
   onToggleSystemAudio,
   onToggleMic,
   onRequestAI,
@@ -131,15 +127,6 @@ export function Toolbar({
       <div style={{ ...overlayBar, justifyContent: 'space-between', width: '100%' }} data-tauri-drag-region>
         {/* Grupo izquierda: audio controles */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          {/* Soundwave / Transcript toggle */}
-          <button
-            onClick={onToggleTranscript}
-            style={iconOnlyBtn(showTranscript)}
-            title="Mostrar/ocultar transcripción"
-          >
-            🔊
-          </button>
-
           {/* Audio sistema */}
           <button
             onClick={onToggleSystemAudio}

@@ -68,9 +68,10 @@ export function ActiveSession({
   const isFree = session.type === 'free';
   const maxSeconds = isFree ? 10 * 60 : 0; // 10 min para free
 
-  // Activar mouse pass-through al entrar en sesión activa, desactivar al salir
+  // Asegurar que el overlay siempre sea clickeable (nunca pass-through).
+  // set_ignore_mouse(true) haría que ningún botón de la toolbar reciba clics.
   useEffect(() => {
-    invoke('set_ignore_mouse', { ignore: true }).catch(() => {});
+    invoke('set_ignore_mouse', { ignore: false }).catch(() => {});
     return () => {
       invoke('set_ignore_mouse', { ignore: false }).catch(() => {});
     };

@@ -2,6 +2,8 @@
 
 import { useRef, useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { LogicalSize } from '@tauri-apps/api/dpi';
 import type { Session } from '../../types';
 import { COLORS, FONT, RADIUS, overlayBar } from '../../theme';
 
@@ -42,6 +44,17 @@ export function Toolbar({
   const menuRef = useRef<HTMLDivElement>(null);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
 
+  // Redimensionar ventana cuando el menú se abre/cierra (evita que quede cortado)
+  useEffect(() => {
+    const w = window.innerWidth || 1920;
+    if (menuOpen) {
+      getCurrentWindow().setSize(new LogicalSize(w, 280)).catch(() => {});
+    } else {
+      // Al cerrar, el ResizeObserver de ActiveSession restaura la altura correcta
+      getCurrentWindow().setSize(new LogicalSize(w, 56)).catch(() => {});
+    }
+  }, [menuOpen]);
+
   // Cerrar menú al hacer click fuera
   useEffect(() => {
     if (!menuOpen) return;
@@ -62,13 +75,10 @@ export function Toolbar({
     invoke('start_dragging').catch(() => {});
   };
 
-  const handleClose = async () => {
-    try {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window');
-      await getCurrentWindow().close();
-    } catch {
-      // Fallback sin Tauri
-    }
+  const handleClose = () => {
+    invoke('close_window').catch(() => {
+      getCurrentWindow().close().catch(() => {});
+    });
   };
 
   // Botón small overlay (fondo oscuro)

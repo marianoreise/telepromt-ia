@@ -28,7 +28,7 @@ export function MainScreen({ sessions, onSelectType }: MainScreenProps) {
 
   const showTooltip = (text: string, e: React.MouseEvent) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setTooltip({ visible: true, text, x: rect.left, y: rect.bottom + 4 });
+    setTooltip({ visible: true, text, x: rect.left, y: rect.top - 94 });
   };
 
   const hideTooltip = () => setTooltip((prev) => ({ ...prev, visible: false }));
@@ -123,7 +123,7 @@ export function MainScreen({ sessions, onSelectType }: MainScreenProps) {
 
             <div style={{ display: 'flex', gap: '8px' }}>
               {sessionTypeBtn(false, 'Sesión gratuita', () => onSelectType('free'), FREE_TOOLTIP)}
-              {sessionTypeBtn(false, 'Sesión completa', () => onSelectType('full'), FULL_TOOLTIP)}
+              {sessionTypeBtn(false, 'Sesión de Pago', () => onSelectType('full'), FULL_TOOLTIP)}
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 // CollapsedView.tsx — Vista colapsada: solo soundwave o logo
 
 import { useState, useEffect } from 'react';
-import { COLORS, FONT } from '../theme';
+import { COLORS } from '../theme';
 
 interface CollapsedViewProps {
   isSessionActive: boolean;
@@ -81,18 +81,11 @@ export function CollapsedView({ isSessionActive, onExpand }: CollapsedViewProps)
         </div>
       ) : (
         // Logo ListnrIO
-        <span
-          style={{
-            fontFamily: FONT.family,
-            fontSize: '18px',
-            fontWeight: FONT.weightBold,
-            color: COLORS.textPrimary,
-            letterSpacing: '-0.03em',
-            lineHeight: 1,
-          }}
-        >
-          🦜
-        </span>
+        <img
+          src="/logo.png"
+          alt="ListnrIO"
+          style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '6px' }}
+        />
       )}
     </div>
   );

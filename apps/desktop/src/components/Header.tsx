@@ -22,14 +22,13 @@ export function Header({ user, onSetScreen, onLogout, previousScreen = 'main' }:
     invoke('start_dragging').catch(() => {});
   };
 
-  const handleClose = async () => {
-    try {
-      // En Tauri v2 usamos la API de ventana directamente para cerrar
-      const { getCurrentWindow } = await import('@tauri-apps/api/window');
-      await getCurrentWindow().close();
-    } catch {
-      // Fallback sin Tauri (entorno de desarrollo en navegador)
-    }
+  const handleClose = () => {
+    invoke('close_window').catch(async () => {
+      try {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        await getCurrentWindow().close();
+      } catch { /* sin Tauri */ }
+    });
   };
 
   const handleCollapse = () => {

@@ -48,8 +48,8 @@ export function AccountMenu({ user, onLogout, onClose, anchorRef }: AccountMenuP
   }, [onClose, anchorRef]);
 
   const openDashboard = () => {
-    invoke('plugin:shell|open', { path: 'https://listnr.io/dashboard' }).catch(() => {
-      window.open('https://listnr.io/dashboard', '_blank');
+    invoke('open_url', { url: 'https://telepromt-ia.vercel.app/dashboard' }).catch(() => {
+      window.open('https://telepromt-ia.vercel.app/dashboard', '_blank');
     });
     onClose();
   };

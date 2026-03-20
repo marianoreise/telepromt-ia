@@ -205,8 +205,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
             <p
               style={{
                 fontFamily: FONT.family,
-                fontSize: FONT.sizeXs,
-                color: COLORS.textMuted,
+                fontSize: FONT.sizeSm,
+                color: COLORS.textSecondary,
                 textAlign: 'center',
                 margin: 0,
                 lineHeight: 1.5,

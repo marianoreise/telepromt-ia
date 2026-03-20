@@ -143,6 +143,11 @@ export function ActiveSession({
         if (data.type === 'ai_start') {
           streamingQuestionRef.current = transcriptTextRef.current;
           streamingTextRef.current = '';
+          // Cancelar timeout de fallback — ai_start llegó correctamente
+          if (aiRequestTimeoutRef.current) {
+            clearTimeout(aiRequestTimeoutRef.current);
+            aiRequestTimeoutRef.current = null;
+          }
           setIsRequestingAI(false);
           setIsStreaming(true);
           setStreamingText('');
@@ -178,11 +183,17 @@ export function ActiveSession({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const aiRequestTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleRequestAI = () => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'request_ai' }));
       setIsRequestingAI(true);
-      // showAnswers se activa en ai_start para evitar panel vacío
+      // Timeout de 15s: si ai_start no llega, resetear para que el usuario pueda reintentar
+      if (aiRequestTimeoutRef.current) clearTimeout(aiRequestTimeoutRef.current);
+      aiRequestTimeoutRef.current = setTimeout(() => {
+        setIsRequestingAI(false);
+      }, 15000);
     }
   };
 
@@ -234,7 +245,7 @@ export function ActiveSession({
         isSystemAudioOn={isSystemAudioOn}
         isMicOn={isMicOn}
         showChat={showChat}
-        isRequestingAI={isRequestingAI}
+        isRequestingAI={isRequestingAI || isStreaming}
         onToggleSystemAudio={() => setIsSystemAudioOn((v) => !v)}
         onToggleMic={() => setIsMicOn((v) => !v)}
         onRequestAI={handleRequestAI}

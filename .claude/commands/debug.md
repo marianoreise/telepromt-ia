@@ -24,12 +24,13 @@ npm test 2>&1 | grep -E "FAIL|Error" | head -10
 | Cannot read env · Invalid API key · CORS | Config | `devops` |
 | pgvector error · similitud baja | RAG | `backend` + `/rag-pipeline` |
 
-## Paso 3 — Ciclo
-1. Invocar el agente con el error completo
-2. `reviewer` revisa el fix
-3. Aplicar fix
-4. Verificar que el error no se reproduce
-5. `testing-specialist` → test de regresión
-6. `git-workflow` → commit fix(scope): descripción
+## Paso 3 — Ciclo de fix (OBLIGATORIO en este orden exacto)
+1. Agente responsable propone y aplica el fix
+2. testing-specialist ejecuta tests unitarios + regresión + verifica coverage >= 80%
+3. reviewer revisa el diff del fix
+4. judge valida contra los criterios de aceptación
+5. Si judge dice COMPLETO → hacer commit con /git-workflow
+6. RECIÉN AHÍ reportar al humano: "Fix listo para que lo pruebes en [URL]"
+Si cualquier paso falla → volver al paso 1. No reportar hasta que todo pase.
 
 Si falla 3 veces → invocar `architect` para revisar la causa raíz de diseño.

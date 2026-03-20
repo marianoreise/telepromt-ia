@@ -50,6 +50,14 @@ Superficies:
 - Desktop: SOLO Windows · nunca generar código macOS/CoreAudio/DMG
 - Desktop build: NUNCA usar `cargo build` directamente — Tauri 2 requiere `tauri dev` o `tauri build` (el build script necesita el contexto de la CLI de Tauri)
 
+## Regla de fix obligatoria
+Después de CUALQUIER corrección de bug o fix de funcionalidad:
+1. El agente testing-specialist ejecuta los tests del módulo afectado
+2. El agente reviewer revisa el diff del fix
+3. El agente judge confirma que los criterios de aceptación se cumplen
+4. Solo después de que judge diga COMPLETO → reportar al humano que está listo
+NUNCA reportar un fix como resuelto sin haber pasado por estos 3 agentes.
+
 ## Equipo de agentes
 TIER 0: project-manager (Opus) — briefing ejecutivo al inicio de sesión
 TIER 1: product-lead (Opus)

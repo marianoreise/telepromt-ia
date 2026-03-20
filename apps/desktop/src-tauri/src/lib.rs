@@ -144,6 +144,13 @@ pub fn run() {
     use tauri_plugin_deep_link::DeepLinkExt;
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            // Si ya hay una instancia corriendo, traer su ventana al frente
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_http::init())

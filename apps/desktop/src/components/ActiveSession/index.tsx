@@ -56,6 +56,7 @@ export function ActiveSession({
   const [currentAnswerIndex, setCurrentAnswerIndex] = useState(0);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingText, setStreamingText] = useState('');
+  const [isRequestingAI, setIsRequestingAI] = useState(false);
 
   // Refs para los valores de streaming (evita stale closures en onmessage)
   const streamingQuestionRef = useRef('');
@@ -142,6 +143,7 @@ export function ActiveSession({
         if (data.type === 'ai_start') {
           streamingQuestionRef.current = transcriptTextRef.current;
           streamingTextRef.current = '';
+          setIsRequestingAI(false);
           setIsStreaming(true);
           setStreamingText('');
           setShowAnswers(true);
@@ -179,6 +181,7 @@ export function ActiveSession({
   const handleRequestAI = () => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'request_ai' }));
+      setIsRequestingAI(true);
       // showAnswers se activa en ai_start para evitar panel vacío
     }
   };
@@ -231,6 +234,7 @@ export function ActiveSession({
         isSystemAudioOn={isSystemAudioOn}
         isMicOn={isMicOn}
         showChat={showChat}
+        isRequestingAI={isRequestingAI}
         onToggleSystemAudio={() => setIsSystemAudioOn((v) => !v)}
         onToggleMic={() => setIsMicOn((v) => !v)}
         onRequestAI={handleRequestAI}

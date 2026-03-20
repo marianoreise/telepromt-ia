@@ -49,7 +49,7 @@ export function TranscriptStrip({ transcript }: TranscriptStripProps) {
           style={{
             fontFamily: FONT.family,
             fontSize: FONT.sizeXs,
-            color: 'rgba(255,255,255,0.30)',
+            color: COLORS.accentBlue,
             marginLeft: '6px',
             flexShrink: 0,
           }}

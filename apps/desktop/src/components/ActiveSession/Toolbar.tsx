@@ -11,6 +11,7 @@ interface ToolbarProps {
   isSystemAudioOn: boolean;
   isMicOn: boolean;
   showChat: boolean;
+  isRequestingAI: boolean;
   onToggleSystemAudio: () => void;
   onToggleMic: () => void;
   onRequestAI: () => void;
@@ -27,6 +28,7 @@ export function Toolbar({
   isSystemAudioOn,
   isMicOn,
   showChat,
+  isRequestingAI,
   onToggleSystemAudio,
   onToggleMic,
   onRequestAI,
@@ -196,10 +198,11 @@ export function Toolbar({
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
           <button
             onClick={onRequestAI}
-            style={overlayBtn(false, false, true)}
+            disabled={isRequestingAI}
+            style={{ ...overlayBtn(false, false, true), opacity: isRequestingAI ? 0.6 : 1 }}
             title="Solicitar respuesta IA"
           >
-            Respuesta IA ✨
+            {isRequestingAI ? 'Generando...' : 'Respuesta IA ✨'}
           </button>
 
           <button
@@ -308,7 +311,7 @@ export function Toolbar({
 
           <div
             style={menuItemStyle}
-            onClick={() => setMenuOpen(false)}
+            onClick={() => { onCollapse(); setMenuOpen(false); }}
             onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.06)')}
             onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.background = 'transparent')}
           >

@@ -202,6 +202,18 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 Esperando autenticación en el navegador...
               </p>
             </div>
+            <p
+              style={{
+                fontFamily: FONT.family,
+                fontSize: FONT.sizeXs,
+                color: COLORS.textMuted,
+                textAlign: 'center',
+                margin: 0,
+                lineHeight: 1.5,
+              }}
+            >
+              Completá el login en el navegador y volvé aquí.
+            </p>
             <button
               onClick={() => setWaiting(false)}
               style={{

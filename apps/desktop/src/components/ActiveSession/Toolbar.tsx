@@ -144,7 +144,7 @@ export function Toolbar({
                     width: '6px',
                     height: '6px',
                     borderRadius: '50%',
-                    background: COLORS.accentGreen,
+                    background: COLORS.accentRed,
                   }}
                 />
               )}
@@ -168,7 +168,7 @@ export function Toolbar({
                     width: '6px',
                     height: '6px',
                     borderRadius: '50%',
-                    background: COLORS.accentGreen,
+                    background: COLORS.accentRed,
                   }}
                 />
               )}

@@ -18,6 +18,19 @@ const AUTH_URL = 'https://telepromt-ia.vercel.app/auth/desktop';
 // Backend API para obtener datos reales del usuario tras autenticación
 const API_URL = import.meta.env.VITE_API_URL ?? 'https://backend-production-c314.up.railway.app';
 
+// Decodifica el payload del JWT sin verificar firma (la firma ya fue verificada
+// por Supabase al emitirlo; aquí solo necesitamos extraer email y sub).
+function decodeJWTPayload(token: string): { sub?: string; email?: string } {
+  try {
+    const part = token.split('.')[1];
+    if (!part) return {};
+    const json = atob(part.replace(/-/g, '+').replace(/_/g, '/'));
+    return JSON.parse(json) as { sub?: string; email?: string };
+  } catch {
+    return {};
+  }
+}
+
 // Usuario mock para fallback en desarrollo (cuando Tauri no está disponible)
 const MOCK_USER: User = {
   id: 'mock',
@@ -41,6 +54,13 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           'auth-callback',
           async (event) => {
             const { access_token } = event.payload;
+
+            // Extraer email y user_id del JWT sin llamar al backend
+            // (evita bloqueos CORS en el primer login)
+            const jwtPayload = decodeJWTPayload(access_token);
+            const fallbackId = jwtPayload.sub ?? access_token.slice(0, 16);
+            const fallbackEmail = jwtPayload.email ?? '';
+
             try {
               const res = await fetch(`${API_URL}/sessions/me`, {
                 headers: { Authorization: `Bearer ${access_token}` },
@@ -49,12 +69,12 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 const data = await res.json() as { id: string; email: string; credits: number };
                 onLogin({ id: data.id, email: data.email, credits: Math.floor(data.credits), accessToken: access_token });
               } else {
-                // Token válido pero el backend falló — login con datos mínimos
-                onLogin({ id: access_token.slice(0, 16), email: '', credits: 0, accessToken: access_token });
+                // Backend falló pero tenemos email del JWT
+                onLogin({ id: fallbackId, email: fallbackEmail, credits: 0, accessToken: access_token });
               }
             } catch {
-              // Sin conexión al backend — login con datos mínimos
-              onLogin({ id: access_token.slice(0, 16), email: '', credits: 0, accessToken: access_token });
+              // Sin conexión al backend — usar datos del JWT
+              onLogin({ id: fallbackId, email: fallbackEmail, credits: 0, accessToken: access_token });
             }
           }
         );

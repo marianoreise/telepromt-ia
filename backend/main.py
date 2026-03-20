@@ -17,7 +17,11 @@ app = FastAPI(
     description="API del SaaS Telepromt IA",
 )
 
-cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
+# Orígenes desde env (web app, etc.) + orígenes fijos del desktop Tauri
+_env_origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
+_tauri_origins = ["tauri://localhost", "https://tauri.localhost"]
+cors_origins = list(dict.fromkeys([o.strip() for o in _env_origins + _tauri_origins if o.strip()]))
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,

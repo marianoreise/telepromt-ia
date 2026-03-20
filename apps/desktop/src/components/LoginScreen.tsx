@@ -185,8 +185,8 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 width: '100%',
                 padding: '12px 16px',
                 borderRadius: RADIUS.lg,
-                background: '#f9fafb',
-                border: `1px solid ${COLORS.borderInput}`,
+                background: 'rgba(59,130,246,0.08)',
+                border: `1px solid rgba(59,130,246,0.25)`,
                 textAlign: 'center',
               }}
             >
@@ -194,7 +194,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
                 style={{
                   fontFamily: FONT.family,
                   fontSize: FONT.sizeBase,
-                  color: COLORS.textSecondary,
+                  color: COLORS.accentBlue,
                   margin: 0,
                   lineHeight: 1.5,
                 }}

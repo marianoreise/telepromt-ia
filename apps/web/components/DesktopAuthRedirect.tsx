@@ -16,8 +16,12 @@ export function DesktopAuthRedirect({ accessToken, refreshToken }: Props) {
 
   useEffect(() => {
     const deepLink = `listnr://auth?token=${encodeURIComponent(accessToken)}&refresh=${encodeURIComponent(refreshToken)}`;
-    window.location.href = deepLink;
-    setSent(true);
+    // setTimeout para que el UI "Abriendo ListnrIO..." se renderice antes del redirect
+    const timer = setTimeout(() => {
+      window.location.href = deepLink;
+      setSent(true);
+    }, 300);
+    return () => clearTimeout(timer);
   }, [accessToken, refreshToken]);
 
   return (

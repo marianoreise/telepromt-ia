@@ -179,9 +179,8 @@ export function ActiveSession({
   const handleRequestAI = () => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'request_ai' }));
+      // showAnswers se activa en ai_start para evitar panel vacío
     }
-    setShowAnswers(true);
-    setCurrentAnswerIndex(aiMessages.length);
   };
 
   const handleScreenshot = async () => {

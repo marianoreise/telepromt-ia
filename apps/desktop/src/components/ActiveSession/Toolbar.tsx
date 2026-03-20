@@ -1,6 +1,6 @@
 // Toolbar.tsx — Barra de herramientas de la sesión activa (fondo oscuro, overlay)
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import type { Session } from '../../types';
 import { COLORS, FONT, RADIUS, overlayBar } from '../../theme';
@@ -38,6 +38,22 @@ export function Toolbar({
 }: ToolbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Cerrar menú al hacer click fuera
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        menuBtnRef.current && !menuBtnRef.current.contains(e.target as Node)
+      ) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
 
   const handleDrag = () => {
     // start_dragging es el comando Rust registrado en lib.rs
@@ -221,6 +237,7 @@ export function Toolbar({
 
           {/* Menú ⋮ */}
           <button
+            ref={menuBtnRef}
             onClick={() => setMenuOpen((v) => !v)}
             style={{ ...iconOnlyBtn(), fontSize: '18px' }}
             title="Menú"
@@ -262,7 +279,6 @@ export function Toolbar({
         <div
           ref={menuRef}
           style={menuStyle}
-          onMouseLeave={() => setMenuOpen(false)}
         >
           <div
             style={{

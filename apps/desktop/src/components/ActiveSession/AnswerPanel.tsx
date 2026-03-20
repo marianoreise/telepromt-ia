@@ -178,6 +178,13 @@ export function AnswerPanel({
           </button>
         </div>
         <div style={{ display: 'flex', gap: '4px' }}>
+          <button
+            onClick={() => setExpanded((v) => !v)}
+            style={{ ...ctrlBtn, color: 'rgba(255,255,255,0.60)', fontSize: '15px' }}
+            title={expanded ? 'Reducir panel' : 'Expandir panel'}
+          >
+            {expanded ? '⤡' : '⤢'}
+          </button>
           <button onClick={onClear} style={ctrlBtn} title="Limpiar respuestas">
             🗑
           </button>
@@ -213,26 +220,6 @@ export function AnswerPanel({
         ) : null}
       </div>
 
-      {/* Toggle expand/colapsar — esquina inferior derecha */}
-      <button
-        onClick={() => setExpanded((v) => !v)}
-        style={{
-          position: 'absolute',
-          bottom: '4px',
-          right: '4px',
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          color: 'rgba(255,255,255,0.35)',
-          fontSize: '13px',
-          padding: '2px',
-          lineHeight: 1,
-          userSelect: 'none',
-        }}
-        title={expanded ? 'Reducir panel' : 'Expandir panel'}
-      >
-        {expanded ? '⤡' : '⤢'}
-      </button>
     </div>
   );
 }

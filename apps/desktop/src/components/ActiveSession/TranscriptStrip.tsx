@@ -29,7 +29,7 @@ export function TranscriptStrip({ transcript }: TranscriptStripProps) {
     color: hasText
       ? transcript.isFinal
         ? 'rgba(255,255,255,0.85)'
-        : 'rgba(255,255,255,0.50)'
+        : 'rgba(255,255,255,0.65)'
       : COLORS.textMuted,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -40,7 +40,7 @@ export function TranscriptStrip({ transcript }: TranscriptStripProps) {
 
   return (
     <div style={stripStyle}>
-      <span style={textStyle}>
+      <span style={textStyle} title={hasText ? transcript.text : undefined}>
         {hasText ? transcript.text : 'Esperando audio...'}
       </span>
       {/* Indicador de interim (no final) */}

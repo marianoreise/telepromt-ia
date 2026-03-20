@@ -89,3 +89,92 @@ Sprint 7-8: QA + build .exe + lanzamiento v1.0.0
 
 ## Archivos clave
 CLAUDE.md · docs/AGENT-WORKFLOW.md · docs/api/openapi.yaml · supabase/migrations/
+
+---
+
+## Modo Debug Autónomo
+
+Ante cualquier bug reportado — ya sea en la web app, el desktop overlay o
+la comunicación entre capas — activar este flujo automáticamente sin que
+el usuario lo solicite.
+
+### 1. Análisis previo obligatorio (antes de tocar código)
+
+Para cada síntoma reportado, documentar:
+- Qué archivo, componente, endpoint o servicio está fallando
+- Cuál es la causa raíz (no el síntoma superficial)
+- Qué se va a cambiar, en qué archivo y por qué eso resuelve el problema
+- Si el fix puede generar efectos secundarios en otras partes del sistema
+
+### 2. Clasificación y prioridad de bugs
+
+Corregir en este orden de criticidad:
+
+**CRÍTICO — detiene el uso del producto**
+- Errores 500 / crashes del backend (FastAPI)
+- Autenticación rota: JWT inválido, sesión expirada sin renovación, OAuth fallando
+- Pagos: webhooks de Mercado Pago sin procesar, créditos no acreditados
+- Audio/STT: WASAPI no captura, WebSocket de Deepgram desconectado
+- Build del desktop fallando: el .exe no compila o no instala
+
+**ALTO — funcionalidad core degradada**
+- Desincronización frontend/backend: datos que se muestran distintos a los guardados
+- Comunicación rota con APIs externas (Deepgram, OpenAI, Tavily, Anthropic)
+- Errores 401/403: permisos incorrectos, RLS de Supabase mal configurado
+- Errores 404: rutas inexistentes, endpoints movidos, imports rotos
+- Race conditions: respuestas fuera de orden, estados inconsistentes
+- Variables de entorno faltantes o mal referenciadas en producción
+- CORS bloqueando llamadas del frontend al backend
+- WebSocket cayendo sin reconexión automática
+
+**MEDIO — experiencia degradada**
+- Pantallas cortadas, layout roto, overflow sin scroll
+- Texto o mensajes truncados en cualquier componente
+- Botones sin respuesta: event handlers, z-index, setIgnoreMouseEvents
+- Formularios que no validan o no envían datos correctamente
+- Estados de carga infinita: spinners que nunca resuelven
+- Caché desactualizado: datos viejos mostrándose después de un update
+- Errores de TypeScript en runtime que no se detectaron en build
+- Queries SQL lentas o sin índice bloqueando respuestas
+
+**BAJO — polish y robustez**
+- Problemas de invisibilidad del overlay (WDA_EXCLUDEFROMCAPTURE, skipTaskbar)
+- Mensajes de error genéricos sin contexto útil para el usuario
+- Logs insuficientes que dificultan el debugging futuro
+- Memory leaks en el overlay de Windows
+- Retry logic faltante en llamadas a APIs externas
+- Falta de feedback visual en acciones async (optimistic UI)
+
+### 3. Tests a ejecutar después de cada corrección
+
+Sin excepción, correr automáticamente:
+
+- **Unitarios**: funciones de negocio críticas (auth, créditos, RAG, detección de idioma)
+- **Integración**: flujo completo entre capas (frontend → backend → Supabase → API externa)
+- **API**: cada endpoint modificado responde con el status code y payload correctos
+- **Seguridad**: RLS activo en Supabase, variables de entorno no expuestas al cliente, inputs sanitizados
+- **WebSocket**: conexión de Deepgram establece, recibe chunks y reconecta ante caída
+- **Desktop**: shortcuts globales funcionan, botones del overlay responden, invisibilidad activa
+- **Build**: el proyecto compila sin errores de TypeScript y sin warnings críticos
+- **E2E**: flujo mínimo del usuario (login → crear sesión → transcripción → respuesta IA)
+
+### 4. Comportamiento autónomo en el ciclo de corrección
+
+- Si durante los tests se descubren nuevos issues: corregirlos en el mismo ciclo y volver a testear
+- No pedir confirmación para continuar — solo detenerse ante: API keys faltantes,
+  intervención de hardware necesaria, o acción irreversible en producción (drop de tabla, etc.)
+- Si un fix introduce una regresión en otro módulo: revertirlo, documentar el conflicto
+  y proponer una solución alternativa antes de continuar
+- Máximo 3 ciclos de corrección sobre el mismo bug antes de escalar al usuario
+  con un análisis detallado de por qué no se resuelve
+
+### 5. Reporte obligatorio al finalizar cada ciclo
+
+- Lista de bugs corregidos: archivo, línea y descripción del cambio
+- Output completo de los tests: qué pasó, qué falló, qué se corrigió en el ciclo
+- Deuda técnica detectada: issues encontrados que no se corrigieron en este ciclo y por qué
+- Estado actual del sistema: qué funciona, qué está pendiente
+- Próximo paso recomendado
+
+Hacer commit al finalizar cada ciclo completo con el formato:
+fix: [superficie afectada] [descripción breve] — ej: fix: overlay botón AI Answer no respondía al click

@@ -276,10 +276,13 @@ export default function App() {
           isListening={isListening}
           wsRef={wsRef}
           accessToken={user?.accessToken ?? ''}
+          userEmail={user?.email ?? ''}
+          autoGenerate={sessionConfig.autoGenerate ?? false}
           onSetTranscript={setTranscript}
           onAddAIMessage={handleAddAIMessage}
           onSetAIMessages={setAiMessages}
           onSetIsListening={setIsListening}
+          onToggleAutoGenerate={() => setSessionConfig((prev) => ({ ...prev, autoGenerate: !prev.autoGenerate }))}
           onStop={handleStopSession}
           onCollapse={handleCollapse}
           onSetScreen={handleSetScreen}

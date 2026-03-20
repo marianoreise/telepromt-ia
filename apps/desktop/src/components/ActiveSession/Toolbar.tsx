@@ -1,6 +1,6 @@
 // Toolbar.tsx — Barra de herramientas de la sesión activa (fondo oscuro, overlay)
 
-import { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { LogicalSize } from '@tauri-apps/api/dpi';
@@ -14,15 +14,26 @@ interface ToolbarProps {
   isMicOn: boolean;
   showChat: boolean;
   isRequestingAI: boolean;
+  userEmail: string;
+  autoGenerate: boolean;
   onToggleSystemAudio: () => void;
   onToggleMic: () => void;
   onRequestAI: () => void;
   onScreenshot: () => void;
   onToggleChat: () => void;
+  onToggleAutoGenerate: () => void;
   onStop: () => void;
   onCollapse: () => void;
   onLogout: () => void;
 }
+
+// Alturas para la soundwave (ciclo de 4 frames)
+const BAR_HEIGHTS: number[][] = [
+  [3, 8, 11, 8, 3],
+  [5, 11, 8, 11, 5],
+  [8, 6, 13, 6, 8],
+  [6, 10, 8, 10, 6],
+];
 
 export function Toolbar({
   session,
@@ -31,11 +42,14 @@ export function Toolbar({
   isMicOn,
   showChat,
   isRequestingAI,
+  userEmail,
+  autoGenerate,
   onToggleSystemAudio,
   onToggleMic,
   onRequestAI,
   onScreenshot,
   onToggleChat,
+  onToggleAutoGenerate,
   onStop,
   onCollapse,
   onLogout,
@@ -44,13 +58,22 @@ export function Toolbar({
   const menuRef = useRef<HTMLDivElement>(null);
   const menuBtnRef = useRef<HTMLButtonElement>(null);
 
+  // Soundwave animada cuando hay audio activo
+  const audioActive = isSystemAudioOn || isMicOn;
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    if (!audioActive) return;
+    const interval = setInterval(() => setFrame((f) => (f + 1) % 4), 200);
+    return () => clearInterval(interval);
+  }, [audioActive]);
+  const barHeights = BAR_HEIGHTS[frame];
+
   // Redimensionar ventana cuando el menú se abre/cierra (evita que quede cortado)
   useEffect(() => {
     const w = window.innerWidth || 1920;
     if (menuOpen) {
-      getCurrentWindow().setSize(new LogicalSize(w, 280)).catch(() => {});
+      getCurrentWindow().setSize(new LogicalSize(w, 320)).catch(() => {});
     } else {
-      // Al cerrar, el ResizeObserver de ActiveSession restaura la altura correcta
       getCurrentWindow().setSize(new LogicalSize(w, 56)).catch(() => {});
     }
   }, [menuOpen]);
@@ -71,7 +94,6 @@ export function Toolbar({
   }, [menuOpen]);
 
   const handleDrag = () => {
-    // start_dragging es el comando Rust registrado en lib.rs
     invoke('start_dragging').catch(() => {});
   };
 
@@ -79,6 +101,13 @@ export function Toolbar({
     invoke('close_window').catch(() => {
       getCurrentWindow().close().catch(() => {});
     });
+  };
+
+  const openDashboard = () => {
+    invoke('open_url', { url: 'https://telepromt-ia.vercel.app/dashboard' }).catch(() => {
+      window.open('https://telepromt-ia.vercel.app/dashboard', '_blank');
+    });
+    setMenuOpen(false);
   };
 
   // Botón small overlay (fondo oscuro)
@@ -128,7 +157,7 @@ export function Toolbar({
     border: '1px solid rgba(255,255,255,0.15)',
     borderRadius: RADIUS.lg,
     boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-    minWidth: '190px',
+    minWidth: '210px',
     overflow: 'hidden',
     fontFamily: FONT.family,
     fontSize: FONT.sizeSm,
@@ -150,11 +179,36 @@ export function Toolbar({
     margin: '4px 0',
   };
 
+  // Idioma legible
+  const langLabel: Record<string, string> = {
+    castellano: 'Castellano',
+    ingles: 'Inglés',
+    'cast-eng': 'Cast/Eng',
+  };
+
   return (
     <div style={{ position: 'relative' }}>
       <div style={{ ...overlayBar, justifyContent: 'space-between', width: '100%' }} data-tauri-drag-region>
-        {/* Grupo izquierda: audio controles */}
+        {/* Grupo izquierda: audio controles + soundwave */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {/* Soundwave animada cuando hay audio */}
+          {audioActive && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1px', height: '16px', marginRight: '2px' }}>
+              {barHeights.map((h, i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: '2px',
+                    height: `${h}px`,
+                    borderRadius: '2px',
+                    background: COLORS.accentGreen,
+                    transition: 'height 0.15s ease',
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
           {/* Audio sistema */}
           <button
             onClick={onToggleSystemAudio}
@@ -220,7 +274,7 @@ export function Toolbar({
             style={overlayBtn()}
             title="Capturar y analizar pantalla"
           >
-            Analizar 🖥
+            Analizar Pantalla 🖥
           </button>
 
           <button
@@ -293,6 +347,7 @@ export function Toolbar({
           ref={menuRef}
           style={menuStyle}
         >
+          {/* Email del usuario */}
           <div
             style={{
               ...menuItemStyle,
@@ -301,10 +356,82 @@ export function Toolbar({
               borderBottom: '1px solid rgba(255,255,255,0.08)',
             }}
           >
-            <span style={{ fontSize: '14px' }}>🎬</span>
-            <span style={{ fontSize: FONT.sizeSm, color: 'rgba(255,255,255,0.6)' }}>
-              Sesión: {session.company}
+            <span style={{ fontSize: '14px' }}>👤</span>
+            <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {userEmail}
             </span>
+          </div>
+
+          {/* Empresa / idioma de sesión */}
+          <div
+            style={{
+              ...menuItemStyle,
+              cursor: 'default',
+              background: 'rgba(255,255,255,0.03)',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              gap: '2px',
+              padding: '7px 14px',
+            }}
+          >
+            <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>Sesión activa</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '13px' }}>🎬</span>
+              <span style={{ fontSize: FONT.sizeSm }}>{session.company}</span>
+              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>
+                🌐 {langLabel[session.language] ?? session.language}
+              </span>
+            </div>
+          </div>
+
+          <div style={menuDivider} />
+
+          {/* Dashboard */}
+          <div
+            style={menuItemStyle}
+            onClick={openDashboard}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.06)')}
+            onMouseLeave={(e) => ((e.currentTarget as HTMLDivElement).style.background = 'transparent')}
+          >
+            <span>🔲</span>
+            <span>Dashboard</span>
+          </div>
+
+          {/* Auto Generate toggle */}
+          <div
+            style={{ ...menuItemStyle, cursor: 'default', justifyContent: 'space-between' }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>⚡</span>
+              <span>Auto Responder</span>
+            </span>
+            <div
+              onClick={onToggleAutoGenerate}
+              style={{
+                width: '32px',
+                height: '18px',
+                borderRadius: '9px',
+                background: autoGenerate ? COLORS.accentGreen : 'rgba(255,255,255,0.2)',
+                position: 'relative',
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+                flexShrink: 0,
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '2px',
+                  left: autoGenerate ? '16px' : '2px',
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '50%',
+                  background: '#fff',
+                  transition: 'left 0.2s',
+                }}
+              />
+            </div>
           </div>
 
           <div style={menuDivider} />

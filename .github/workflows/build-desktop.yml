@@ -43,6 +43,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          VITE_BACKEND_WS_URL: wss://backend-production-c314.up.railway.app
+          VITE_API_URL: https://backend-production-c314.up.railway.app
         with:
           projectPath: apps/desktop
           tagName: ${{ github.ref_name }}

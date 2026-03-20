@@ -17,10 +17,13 @@ interface ActiveSessionProps {
   isListening: boolean;
   wsRef: React.MutableRefObject<WebSocket | null>;
   accessToken: string;
+  userEmail: string;
+  autoGenerate: boolean;
   onSetTranscript: (t: Transcript) => void;
   onAddAIMessage: (msg: AIMessage) => void;
   onSetAIMessages: (msgs: AIMessage[]) => void;
   onSetIsListening: (v: boolean) => void;
+  onToggleAutoGenerate: () => void;
   onStop: () => void;
   onCollapse: () => void;
   onSetScreen?: (screen: AppScreen) => void;
@@ -40,10 +43,13 @@ export function ActiveSession({
   isListening: _isListening,
   wsRef,
   accessToken,
+  userEmail,
+  autoGenerate,
   onSetTranscript,
   onAddAIMessage,
   onSetAIMessages,
   onSetIsListening,
+  onToggleAutoGenerate,
   onStop,
   onCollapse,
   onSetScreen: _onSetScreen,
@@ -255,11 +261,14 @@ export function ActiveSession({
         isMicOn={isMicOn}
         showChat={showChat}
         isRequestingAI={isRequestingAI || isStreaming}
+        userEmail={userEmail}
+        autoGenerate={autoGenerate}
         onToggleSystemAudio={() => setIsSystemAudioOn((v) => !v)}
         onToggleMic={() => setIsMicOn((v) => !v)}
         onRequestAI={handleRequestAI}
         onScreenshot={handleScreenshot}
         onToggleChat={() => setShowChat((v) => !v)}
+        onToggleAutoGenerate={onToggleAutoGenerate}
         onStop={onStop}
         onCollapse={onCollapse}
         onLogout={onLogout}

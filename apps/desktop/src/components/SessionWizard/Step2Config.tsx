@@ -123,6 +123,11 @@ export function Step2Config({ config, onChange, onNext, onBack }: Step2Props) {
         >
           <option value="">Sin CV</option>
         </select>
+        <div style={{ fontSize: '11px', color: COLORS.textSecondary, marginTop: '4px' }}>
+          Subí tu CV en{' '}
+          <span style={{ color: COLORS.textPrimary, fontWeight: 500 }}>listnr.io → Perfil</span>
+          {' '}para poder seleccionarlo acá.
+        </div>
       </div>
 
       {/* Modelo IA */}
@@ -187,7 +192,7 @@ export function Step2Config({ config, onChange, onNext, onBack }: Step2Props) {
           onClick={onNext}
           style={{ ...btnPrimary, fontFamily: FONT.family, borderRadius: RADIUS.md }}
         >
-          {(config.type === 'free' ? 'Crear sesión gratuita' : 'Crear sesión completa') + ' →'}
+          {(config.type === 'free' ? 'Crear sesión gratuita' : 'Crear sesión de pago') + ' →'}
         </button>
       </div>
     </div>

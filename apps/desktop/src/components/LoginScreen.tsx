@@ -151,7 +151,7 @@ export function LoginScreen({ onLogin }: LoginScreenProps) {
           <img
             src="/logo.png"
             alt="ListnrIO"
-            style={{ width: '80px', height: '80px', objectFit: 'contain', marginBottom: '4px' }}
+            style={{ width: '120px', height: '120px', objectFit: 'contain', marginBottom: '4px' }}
           />
         </div>
 

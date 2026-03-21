@@ -1,5 +1,6 @@
 import os
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -11,10 +12,16 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Telepromt IA API iniciada — v%s", app.version)
+    yield
+
 app = FastAPI(
     title="Telepromt IA API",
     version="0.1.0",
     description="API del SaaS Telepromt IA",
+    lifespan=lifespan,
 )
 
 # Orígenes desde env (web app, etc.) + orígenes fijos del desktop Tauri
@@ -36,6 +43,3 @@ app.include_router(knowledge.router)
 app.include_router(sessions.router)
 app.include_router(payments.router)
 
-@app.on_event("startup")
-async def startup():
-    logger.info("Telepromt IA API iniciada — v%s", app.version)

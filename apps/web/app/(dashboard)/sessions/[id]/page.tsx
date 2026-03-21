@@ -16,6 +16,12 @@ import { ArrowLeft, Radio } from 'lucide-react'
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
 const FREE_SESSION_SECONDS = 600
 
+async function getToken(): Promise<string> {
+  const supabase = createClient()
+  const { data } = await supabase.auth.getSession()
+  return data.session?.access_token ?? ''
+}
+
 interface PageProps {
   params: { id: string }
 }
@@ -26,12 +32,6 @@ export default function SessionDetailPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true)
   const [ending, setEnding] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  async function getToken(): Promise<string> {
-    const supabase = createClient()
-    const { data } = await supabase.auth.getSession()
-    return data.session?.access_token ?? ''
-  }
 
   const fetchSession = useCallback(async () => {
     try {

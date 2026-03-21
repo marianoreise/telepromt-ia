@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,12 @@ import type { SessionSummary, SessionDetail } from '@/types/session'
 import { Plus, ArrowRight, Clock } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
+
+async function getToken(): Promise<string> {
+  const supabase = createClient()
+  const { data } = await supabase.auth.getSession()
+  return data.session?.access_token ?? ''
+}
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   active:  { label: 'En vivo',    className: 'bg-green-100 text-green-700 border-green-200 animate-pulse' },
@@ -26,13 +32,7 @@ export default function SessionsPage() {
   const [error, setError] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
 
-  async function getToken(): Promise<string> {
-    const supabase = createClient()
-    const { data } = await supabase.auth.getSession()
-    return data.session?.access_token ?? ''
-  }
-
-  async function loadSessions() {
+  const loadSessions = useCallback(async () => {
     try {
       const token = await getToken()
       const res = await fetch(`${API_URL}/sessions/`, {
@@ -49,9 +49,9 @@ export default function SessionsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  useEffect(() => { loadSessions() }, [])
+  useEffect(() => { loadSessions() }, [loadSessions])
 
   const activeSession = sessions.find(s => s.status === 'active')
 

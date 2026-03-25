@@ -67,6 +67,100 @@ TIER 3: auth-specialist · database-specialist · security-specialist · testing
 TIER 4: release-manager · deploy-validator (Sonnet)
 TIER 5: explorer · planner · reviewer · judge (Haiku)
 
+## Reglas de routing de agentes
+
+Usar esta tabla para decidir qué agente invocar según el input del usuario.
+Invocar siempre el agente más específico disponible — no resolver en el orquestador lo que un agente especializado puede hacer mejor.
+
+### Tabla de routing por intención
+
+| Señal del usuario | Comando / Agente | Notas |
+|---|---|---|
+| "Quiero una feature X", objetivo de negocio nuevo | `/nueva-feature` | Pipeline completo de 13 pasos |
+| "Cómo vamos", "en qué estamos", "qué está bloqueado" | `project-manager` | Briefing ejecutivo al inicio de sesión |
+| "Hay un bug en X", error reportado | `/debug` | Ciclo autónomo: fix → test → review → judge |
+| Feature con reglas de negocio ambiguas o complejas | `functional-analyst` | Invocar DESPUÉS de product-lead y ANTES de architect |
+| "Diseñá la arquitectura de X", nuevas tablas/endpoints | `architect` | Requiere Feature Spec lista. Produce ADR + migration + openapi + briefs |
+| Implementar routes FastAPI, servicios backend, RAG, webhooks | `backend` | Requiere brief del architect |
+| Crear páginas Next.js, componentes React, UI desktop overlay | `frontend` | Requiere brief del architect |
+| GitHub Actions, Dockerfile, Railway, Vercel, env vars, CI/CD | `devops` | Invocar cuando hay build/deploy fallido o configuración nueva |
+| Supabase Auth, RLS policies, JWT, OAuth, errores 401/403 | `auth-specialist` | Invocar para TODA tabla nueva que necesite RLS o flujo de auth |
+| Nuevas migraciones SQL, pgvector, índices, queries lentas | `database-specialist` | Usa skill /db-migration. Invocar cuando architect define tablas nuevas |
+| Pre-merge a main, pre-deploy, "auditá la seguridad" | `security-specialist` | Poder de veto. SIEMPRE antes de mergear a main |
+| Feature completa, coverage < 80%, "generá tests" | `testing-specialist` | Usa skill /test-generator. Coverage mínimo 80% |
+| UI completa, "revisá la UX", "es fácil de usar?" | `ux-reviewer` | Evalúa con 10 principios de Nielsen |
+| "Diseñá la pantalla de X", problemas visuales detectados | `ui-designer` | Diseñar ANTES de que frontend codee, no después |
+| Textos de UI, mensajes de error, copy de onboarding | `copywriter` | Español LATAM natural. Invocar cuando hay textos en inglés en desktop |
+| Latencia > targets, overlay lento, memory leak, "está lento" | `performance-specialist` | Poder de bloqueo. Métricas: STT <1.5s, LLM <3s, API <500ms |
+| Usuarios reales, "cómo están las métricas", funnel analysis | `growth-analyst` | Solo invocar cuando hay usuarios reales usando el producto |
+| "Documentá X", guía de usuario, FAQ, release notes | `documentation-writer` | Genera docs en docs/user/ (ES) y docs/api/ (EN) |
+| Error con Deepgram, Claude API, OpenAI, Tavily, Mercado Pago | `api-integrations-specialist` | Diagnóstico: credentials → connectivity → SDK version → status page |
+| Sprint completo con tests OK, "preparar el release" | `release-manager` | Requiere: tests ✅ + build ✅ + security ✅ |
+| 3-5 min después de un deploy a producción | `deploy-validator` | Smoke tests HTTP/API. Siempre junto a ux-reviewer + ui-designer en /post-deploy |
+| Antes de cualquier implementación, "¿dónde está X en el código?" | `explorer` | SOLO lectura. Mapea archivos, patterns, convenciones |
+| Feature compleja que necesita descomposición en subtareas | `planner` | Output: tabla de tareas con agente, dependencias, parallelismo |
+| Agente terminó implementación, "revisá el código" | `reviewer` | Revisión rápida: correctness + consistencia + seguridad básica |
+| Feature implementada, "validar contra spec" | `judge` | Verifica CAs uno a uno. Binario: COMPLETO / INCOMPLETO |
+
+### Routing por tipo de error
+
+| Error observado | Agente primario | Agente secundario |
+|---|---|---|
+| 401 / 403 | `auth-specialist` | `security-specialist` |
+| 500 / crash FastAPI | `backend` | `testing-specialist` |
+| 404 / import roto | `explorer` (localizar) → `backend` o `frontend` | — |
+| RLS mal configurado | `auth-specialist` | `database-specialist` |
+| Deepgram / STT desconectado | `api-integrations-specialist` | `backend` |
+| CORS bloqueando | `backend` (FastAPI CORS) o `devops` (headers infra) | — |
+| Build TypeScript fallando | `frontend` o `backend` (según superficie) | `reviewer` |
+| WebSocket cayendo | `backend` (reconexión) + `api-integrations-specialist` | — |
+| Overlay no responde a clicks | `frontend` (Tauri setIgnoreMouseEvents) | `performance-specialist` |
+| Query SQL lenta | `database-specialist` | `performance-specialist` |
+| Migración Supabase fallida | `database-specialist` | `auth-specialist` (si es tabla con RLS) |
+| Credits no acreditados | `backend` (webhook handler) | `api-integrations-specialist` (Mercado Pago) |
+| Memory leak overlay | `performance-specialist` | `frontend` |
+
+### Flujo para nueva feature (siempre /nueva-feature)
+
+```
+product-lead → functional-analyst → architect
+     ↓
+database-specialist (migration) + auth-specialist (RLS)
+     ↓
+backend + frontend [paralelo] + devops
+     ↓
+testing-specialist → reviewer → security-specialist → judge
+     ↓
+COMPLETO → /pre-deploy → CI/CD → /post-deploy
+```
+
+### Skills — cuándo invocarlos
+
+| Skill | Cuándo invocar |
+|---|---|
+| `/rag-pipeline` | Implementar o modificar el pipeline de embeddings + búsqueda vectorial (CV→pgvector→Claude) |
+| `/frontend-design` | Crear UI nueva o mejorar componentes existentes que necesitan diseño distintivo |
+| `/supabase-postgres-best-practices` | Escribir, revisar u optimizar queries SQL, schema o configuración de Postgres |
+| `/vercel-react-best-practices` | Revisar o refactorizar componentes React/Next.js para performance óptima |
+| `/security-audit` | Auditoría de seguridad completa (invocado por security-specialist) |
+| `/test-generator` | Generar suites de tests con los templates del stack (invocado por testing-specialist) |
+| `/git-workflow` | Gestionar commits semánticos + tags de versión (invocado por release-manager) |
+| `/db-migration` | Ejecutar migraciones SQL en Supabase (invocado por database-specialist) |
+| `/api-spec` | Crear o actualizar openapi.yaml (invocado por architect) |
+
+### Paralelismo permitido
+
+Los siguientes agentes pueden correr en paralelo sin dependencias entre sí:
+- `backend` + `frontend` (si no comparten tipos, sino esperar brief del architect)
+- `deploy-validator` + `ux-reviewer` + `ui-designer` (en /post-deploy siempre los 3 juntos)
+- `explorer` + cualquier agente de planeación
+
+Los siguientes agentes son SIEMPRE secuenciales (el siguiente depende del anterior):
+- `product-lead` → `functional-analyst` → `architect`
+- `database-specialist` → `backend` (no implementar antes de que exista la migración)
+- `testing-specialist` → `reviewer` → `security-specialist` → `judge` (pipeline de validación)
+- `release-manager` → CI/CD → `deploy-validator`
+
 ## Reglas de smoke test — sin excepciones
 Cada vez que el humano pida un smoke test (o se ejecute /post-deploy), SIEMPRE invocar los 3 agentes:
 1. `deploy-validator` → validación técnica (HTTP, API, rutas)

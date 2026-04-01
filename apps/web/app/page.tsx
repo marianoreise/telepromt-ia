@@ -35,6 +35,14 @@ export default function LandingPage() {
 
       {/* ── Hero ───────────────────────────────────���────────────────────── */}
       <section className="max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
+        {/* Logo prominente en hero */}
+        <div className="flex items-center justify-center gap-4 mb-8">
+          <Image src="/logo.png" alt="listnr.io" width={64} height={64} className="rounded-2xl shadow-md" />
+          <span className="text-4xl font-bold tracking-tight">
+            listnr<span style={{ color: '#F5A623' }}>.io</span>
+          </span>
+        </div>
+
         <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1.5 rounded-full mb-8 border border-blue-100">
           <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
           Asistente IA en tiempo real · gratuito para empezar
@@ -288,9 +296,9 @@ export default function LandingPage() {
       <footer className="bg-gray-900 py-12">
         <div className="max-w-5xl mx-auto px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
-            <div className="flex items-center gap-2">
-              <Image src="/logo.png" alt="listnr.io" width={24} height={24} className="rounded-md" />
-              <span className="text-base font-bold text-white">
+            <div className="flex items-center gap-3">
+              <Image src="/logo.png" alt="listnr.io" width={32} height={32} className="rounded-xl" />
+              <span className="text-lg font-bold text-white">
                 listnr<span style={{ color: '#F5A623' }}>.io</span>
               </span>
             </div>

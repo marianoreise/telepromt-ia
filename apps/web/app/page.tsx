@@ -10,10 +10,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <Image src="/logo.png" alt="listnr.io" width={32} height={32} className="" />
-            <span className="text-xl font-bold tracking-tight">
-              listnr<span style={{ color: '#F5A623' }}>.io</span>
-            </span>
+            <Image src="/logo.png" alt="listnr.io" width={48} height={48} className="" priority />
           </Link>
           <div className="flex items-center gap-3">
             <Link
@@ -36,11 +33,8 @@ export default function LandingPage() {
       {/* ── Hero ───────────────────────────────────���────────────────────── */}
       <section className="max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
         {/* Logo prominente en hero */}
-        <div className="flex items-center justify-center gap-4 mb-8">
-          <Image src="/logo.png" alt="listnr.io" width={64} height={64} className="" />
-          <span className="text-4xl font-bold tracking-tight">
-            listnr<span style={{ color: '#F5A623' }}>.io</span>
-          </span>
+        <div className="flex justify-center mb-8">
+          <Image src="/logo.png" alt="listnr.io" width={180} height={180} className="" priority />
         </div>
 
         <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1.5 rounded-full mb-8 border border-blue-100">

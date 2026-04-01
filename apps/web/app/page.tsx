@@ -4,7 +4,7 @@ import { Mic, Sparkles, EyeOff, BookOpen, ArrowRight, Check, Zap, Brain, Globe, 
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 antialiased">
+    <div className="min-h-screen text-gray-900 antialiased" style={{ background: '#ffffff' }}>
 
       {/* ── Navbar ──────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
@@ -33,7 +33,7 @@ export default function LandingPage() {
       {/* ── Hero ───────────────────────────────────���────────────────────── */}
       <section className="max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
         {/* Logo prominente en hero */}
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-8" style={{ background: '#ffffff' }}>
           <Image src="/logo.png" alt="listnr.io" width={180} height={180} className="" priority />
         </div>
 

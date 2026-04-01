@@ -1,10 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Download, Zap, Clock, CheckCircle2, Circle } from 'lucide-react'
+import { Zap, Clock, CheckCircle2, Circle, PlayCircle } from 'lucide-react'
 import { DesktopAuthRedirect } from '@/components/DesktopAuthRedirect'
-
-const DOWNLOAD_URL = 'https://github.com/marianoreise/telepromt-ia/releases/latest/download/Telepromt.IA_0.1.0_x64-setup.exe'
 
 async function getUserData() {
   const supabase = await createClient()
@@ -54,7 +52,7 @@ export default async function DashboardPage({
   const STEPS = [
     { label: 'Completar perfil', href: '/settings', done: onboardingStep >= 1 },
     { label: 'Subir CV / Resume', href: '/knowledge', done: onboardingStep >= 2 },
-    { label: 'Descargar app desktop', href: DOWNLOAD_URL, done: onboardingStep >= 3 },
+    { label: 'Iniciar primera sesión', href: '/sessions', done: onboardingStep >= 3 },
   ]
 
   return (
@@ -105,16 +103,17 @@ export default async function DashboardPage({
 
         <Card className="border border-gray-100 shadow-sm">
           <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-medium uppercase tracking-wide text-gray-400">App Desktop</CardDescription>
-            <CardTitle className="text-sm font-semibold text-gray-700">Windows 10/11 · v1.0.0</CardTitle>
+            <CardDescription className="text-xs font-medium uppercase tracking-wide text-gray-400">Sesiones</CardDescription>
+            <CardTitle className="text-sm font-semibold text-gray-700">Asistente en tiempo real</CardTitle>
           </CardHeader>
           <CardContent>
             <a
-              href={DOWNLOAD_URL}
-              className="inline-flex items-center gap-1.5 h-8 rounded-lg px-3 text-xs font-medium text-white bg-gray-900 hover:bg-gray-800 transition-colors"
+              href="/sessions"
+              className="inline-flex items-center gap-1.5 h-8 rounded-lg px-3 text-xs font-medium text-white transition-all"
+              style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
             >
-              <Download className="w-3.5 h-3.5" />
-              Descargar .exe
+              <PlayCircle className="w-3.5 h-3.5" />
+              Nueva sesión
             </a>
           </CardContent>
         </Card>
@@ -142,7 +141,7 @@ export default async function DashboardPage({
                     href={step.href}
                     className="inline-flex items-center h-7 rounded-lg border border-gray-200 px-3 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                   >
-                    {i === 2 ? 'Descargar' : 'Completar'}
+                    Completar
                   </a>
                 )}
               </div>

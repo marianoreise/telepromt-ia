@@ -10,7 +10,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <Image src="/logo.png" alt="listnr.io" width={32} height={32} className="rounded-lg" />
+            <Image src="/logo.png" alt="listnr.io" width={32} height={32} className="" />
             <span className="text-xl font-bold tracking-tight">
               listnr<span style={{ color: '#F5A623' }}>.io</span>
             </span>
@@ -37,7 +37,7 @@ export default function LandingPage() {
       <section className="max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
         {/* Logo prominente en hero */}
         <div className="flex items-center justify-center gap-4 mb-8">
-          <Image src="/logo.png" alt="listnr.io" width={64} height={64} className="rounded-2xl" />
+          <Image src="/logo.png" alt="listnr.io" width={64} height={64} className="" />
           <span className="text-4xl font-bold tracking-tight">
             listnr<span style={{ color: '#F5A623' }}>.io</span>
           </span>
@@ -297,7 +297,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
             <div className="flex items-center gap-3">
-              <Image src="/logo.png" alt="listnr.io" width={32} height={32} className="rounded-xl" />
+              <Image src="/logo.png" alt="listnr.io" width={32} height={32} className="" />
               <span className="text-lg font-bold text-white">
                 listnr<span style={{ color: '#F5A623' }}>.io</span>
               </span>

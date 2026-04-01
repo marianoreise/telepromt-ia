@@ -10,6 +10,7 @@ export interface SessionDetail {
   job_title: string
   status: SessionStatus
   seconds_remaining: number | null
+  language?: string
 }
 
 export interface SessionSummary {

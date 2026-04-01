@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -8,10 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { createClient } from '@/lib/supabase/client'
 import { useSessionTimer } from '@/hooks/useSessionTimer'
+import { useSTTSession, type AudioSource } from '@/hooks/useSTTSession'
 import { formatDuration } from '@/lib/format-duration'
 import type { SessionDetail } from '@/types/session'
 import Image from 'next/image'
-import { ArrowLeft, Radio } from 'lucide-react'
+import { ArrowLeft, Radio, Mic, MicOff, Monitor, Sparkles, Loader2 } from 'lucide-react'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
 const FREE_SESSION_SECONDS = 600
@@ -158,12 +159,36 @@ function ActiveSessionView({
   ending: boolean
 }) {
   const [expired, setExpired] = useState(false)
+  const [audioSource, setAudioSource] = useState<AudioSource>('mic')
+  const transcriptEndRef = useRef<HTMLDivElement>(null)
+
   const { formattedTime, secondsLeft } = useSessionTimer({
     initialSeconds: session.seconds_remaining ?? FREE_SESSION_SECONDS,
     onExpire: () => setExpired(true),
   })
 
+  const { state: stt, connect, startListening, stopListening, requestAI, disconnect } = useSTTSession()
+
   const progress = ((FREE_SESSION_SECONDS - secondsLeft) / FREE_SESSION_SECONDS) * 100
+
+  // Auto-scroll transcript
+  useEffect(() => {
+    transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [stt.transcriptHistory, stt.currentTranscript])
+
+  // Connect to backend when component mounts
+  useEffect(() => {
+    async function initConnection() {
+      const supabase = createClient()
+      const { data } = await supabase.auth.getSession()
+      const token = data.session?.access_token ?? ''
+      const lang = session.language ?? 'es'
+      await connect(token, lang)
+    }
+    initConnection()
+    return () => disconnect()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (expired) {
     return (
@@ -177,53 +202,224 @@ function ActiveSessionView({
     )
   }
 
+  const isListening = stt.status === 'listening'
+  const isConnected = stt.status === 'connected' || isListening
+  const hasAIResponse = stt.currentAIResponse.length > 0
+
   return (
-    <div className="max-w-xl space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Badge className="gap-1.5 bg-green-100 text-green-700 border-green-200 animate-pulse">
-          <Radio className="w-3 h-3" />
-          EN VIVO
-        </Badge>
-        <span className="text-sm text-gray-500">Sesión gratuita</span>
+    <div className="max-w-3xl space-y-4">
+      {/* Header row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Badge className="gap-1.5 bg-green-100 text-green-700 border-green-200 animate-pulse">
+            <Radio className="w-3 h-3" />
+            EN VIVO
+          </Badge>
+          {isListening && (
+            <Badge className="gap-1.5 bg-red-100 text-red-600 border-red-200 animate-pulse">
+              <Mic className="w-3 h-3" />
+              Escuchando
+            </Badge>
+          )}
+          {stt.status === 'connecting' && (
+            <span className="text-xs text-gray-400 flex items-center gap-1">
+              <Loader2 className="w-3 h-3 animate-spin" /> Conectando...
+            </span>
+          )}
+        </div>
+        <span className="text-3xl font-bold tabular-nums text-gray-800">{formattedTime}</span>
       </div>
 
-      {/* Timer */}
-      <Card className="border-0 shadow-sm bg-gradient-to-br from-[#1B6CA8] to-[#7B35A2] text-white">
-        <CardContent className="py-10 flex flex-col items-center gap-2">
-          <p className="text-7xl font-bold tracking-tight tabular-nums">{formattedTime}</p>
-          <p className="text-white/70 text-sm">tiempo restante</p>
-        </CardContent>
-      </Card>
+      {/* Error banner */}
+      {stt.error && (
+        <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-2 text-sm text-red-600">
+          {stt.error}
+        </div>
+      )}
 
-      {/* Info + progreso */}
-      <Card className="border border-gray-100 shadow-sm">
-        <CardContent className="py-5 space-y-4">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-0.5">Empresa</p>
-              <p className="font-semibold text-gray-900">{session.company || '—'}</p>
+      {/* Out of credits */}
+      {stt.status === 'out_of_credits' && (
+        <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-700">
+          Sin créditos disponibles. <a href="/billing" className="font-medium underline">Adquirí más créditos</a>
+        </div>
+      )}
+
+      {/* Main 2-col layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        {/* Left — controles + transcript */}
+        <div className="space-y-4">
+          {/* Audio controls */}
+          <Card className="border border-gray-100 shadow-sm">
+            <CardContent className="py-4 space-y-3">
+              {/* Source selector */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setAudioSource('mic')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-colors ${
+                    audioSource === 'mic'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  <Mic className="w-3 h-3" /> Micrófono
+                </button>
+                <button
+                  onClick={() => setAudioSource('system')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-colors ${
+                    audioSource === 'system'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                      : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  <Monitor className="w-3 h-3" /> Audio del sistema
+                </button>
+              </div>
+
+              {/* Start / Stop listening */}
+              {!isListening ? (
+                <Button
+                  className="w-full text-white gap-2"
+                  style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+                  onClick={() => startListening(audioSource)}
+                  disabled={!isConnected || stt.status === 'out_of_credits'}
+                >
+                  <Mic className="w-4 h-4" />
+                  Iniciar escucha
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full border-gray-200 text-gray-700 gap-2"
+                  onClick={stopListening}
+                >
+                  <MicOff className="w-4 h-4" />
+                  Pausar escucha
+                </Button>
+              )}
+
+              {/* Manual AI button */}
+              <Button
+                variant="outline"
+                className="w-full border-purple-200 text-purple-700 hover:bg-purple-50 gap-2"
+                onClick={requestAI}
+                disabled={!isConnected || stt.isAIThinking}
+              >
+                {stt.isAIThinking
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Generando respuesta...</>
+                  : <><Sparkles className="w-4 h-4" /> Pedir respuesta IA</>
+                }
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Session info + progress */}
+          <Card className="border border-gray-100 shadow-sm">
+            <CardContent className="py-4 space-y-3">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-0.5">Empresa</p>
+                  <p className="font-semibold text-gray-900 truncate">{session.company || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-0.5">Puesto</p>
+                  <p className="font-semibold text-gray-900 truncate">{session.job_title || '—'}</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-gray-400">
+                  <span>Tiempo usado</span>
+                  <span>{formatDuration(FREE_SESSION_SECONDS - secondsLeft)} / 10m</span>
+                </div>
+                <Progress value={progress} className="h-1.5" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Transcript */}
+          <Card className="border border-gray-100 shadow-sm">
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-sm font-medium text-gray-600">Transcripción</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <div className="h-40 overflow-y-auto space-y-1 text-sm">
+                {stt.transcriptHistory.length === 0 && !stt.currentTranscript && (
+                  <p className="text-gray-400 text-xs italic">
+                    {isListening ? 'Escuchando... hablá ahora' : 'Iniciá la escucha para ver la transcripción'}
+                  </p>
+                )}
+                {stt.transcriptHistory.map((entry, i) => (
+                  <p key={i} className="text-gray-700 leading-snug">{entry.text}</p>
+                ))}
+                {stt.currentTranscript && (
+                  <p className="text-gray-400 italic">{stt.currentTranscript}</p>
+                )}
+                <div ref={transcriptEndRef} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right — AI response teleprompter */}
+        <div className="flex flex-col">
+          <Card className={`flex-1 border shadow-sm transition-all duration-300 ${
+            hasAIResponse
+              ? 'border-purple-200 bg-gradient-to-br from-[#1B6CA8]/5 to-[#7B35A2]/5'
+              : 'border-gray-100'
+          }`}>
+            <CardHeader className="pb-2 pt-4 px-4">
+              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                Respuesta IA
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-4">
+              <div className="min-h-64 flex flex-col justify-start">
+                {!hasAIResponse && !stt.isAIThinking && (
+                  <p className="text-gray-400 text-xs italic mt-2">
+                    La respuesta aparecerá aquí automáticamente cuando se detecte una pregunta,
+                    o podés pedirla manualmente.
+                  </p>
+                )}
+                {stt.isAIThinking && !stt.currentAIResponse && (
+                  <div className="flex items-center gap-2 text-purple-500 mt-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="text-sm">Generando respuesta...</span>
+                  </div>
+                )}
+                {stt.currentAIResponse && (
+                  <p className="text-gray-900 text-base leading-relaxed font-medium whitespace-pre-wrap">
+                    {stt.currentAIResponse}
+                    {stt.isAIThinking && (
+                      <span className="inline-block w-1 h-4 bg-purple-500 ml-0.5 animate-pulse align-middle" />
+                    )}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Previous AI responses */}
+          {stt.aiResponseHistory.length > 1 && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Respuestas anteriores</p>
+              {stt.aiResponseHistory.slice(0, -1).reverse().slice(0, 2).map((r, i) => (
+                <Card key={i} className="border border-gray-100 opacity-60">
+                  <CardContent className="py-3 px-4">
+                    <p className="text-xs text-gray-600 line-clamp-3">{r.text}</p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-            <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-0.5">Puesto</p>
-              <p className="font-semibold text-gray-900">{session.job_title || '—'}</p>
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-xs text-gray-400">
-              <span>Tiempo usado</span>
-              <span>{formatDuration(FREE_SESSION_SECONDS - secondsLeft)} / 10m</span>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </div>
-        </CardContent>
-      </Card>
+          )}
+        </div>
+      </div>
 
       {/* Finalizar */}
       <Button
         variant="outline"
         className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-        onClick={onEnd}
+        onClick={() => { disconnect(); onEnd() }}
         disabled={ending}
       >
         {ending ? 'Finalizando...' : 'Finalizar sesión'}

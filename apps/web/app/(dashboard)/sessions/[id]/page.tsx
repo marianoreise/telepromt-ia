@@ -467,7 +467,7 @@ function EndedSessionView({
       {isExpired && (
         <div className="rounded-lg bg-gray-100 px-4 py-3 flex items-center gap-2 text-sm font-medium text-gray-900">
           Tu sesión gratuita de 10 minutos ha finalizado. Para seguir usando
-          <Image src="/logo.png" alt="listnr.io" width={18} height={18} className="rounded inline-block mx-1" />
+          <Image src="/logo.png" alt="listnr.io" width={60} height={20} style={{ height: 'auto' }} className="inline-block mx-1" />
           en tus próximas entrevistas, adquirí créditos en la sección{' '}
           <a href="/billing" className="underline" style={{ color: '#1B6CA8' }}>Créditos</a>
         </div>

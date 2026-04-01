@@ -39,7 +39,7 @@ export function DesktopAuthPage({ email, accessToken, refreshToken }: Props) {
     >
       {/* Logo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '40px' }}>
-        <Image src="/logo.png" alt="listnr.io" width={64} height={64} style={{ borderRadius: '16px' }} />
+        <Image src="/logo.png" alt="listnr.io" width={180} height={60} style={{ height: 'auto' }} />
         <span style={{ fontSize: '36px', fontWeight: 700, color: '#1B6CA8', letterSpacing: '-0.5px' }}>
           listnr<span style={{ color: '#F5A623' }}>.io</span>
         </span>

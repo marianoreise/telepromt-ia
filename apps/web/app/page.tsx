@@ -228,6 +228,86 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Plataformas compatibles ──────────────────────────────────────── */}
+      <section className="py-24">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold tracking-tight mb-2">
+              <span
+                className="bg-clip-text text-transparent"
+                style={{ backgroundImage: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+              >
+                #1 Asistente de Entrevistas
+              </span>
+              <span className="text-gray-900"> del mercado</span>
+            </h2>
+            <p className="text-gray-500">Conectate a cualquier plataforma y recibí asistencia IA invisible para los demás.</p>
+          </div>
+
+          {/* Banner principal */}
+          <div
+            className="rounded-2xl overflow-hidden mb-5 flex items-center justify-between p-8 gap-8"
+            style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+          >
+            <div className="flex-1 min-w-0 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-white/60">Compatible con</p>
+              <h3 className="text-2xl font-bold text-white leading-snug">
+                Funciona con cualquier plataforma de entrevistas
+              </h3>
+              <p className="text-sm text-white/75 leading-relaxed max-w-sm">
+                Google Meet, Zoom, Teams y más. El overlay es completamente invisible para los otros participantes.
+              </p>
+            </div>
+            <div className="shrink-0 grid grid-cols-3 gap-4">
+              {[
+                { emoji: '🟢', label: 'Google Meet' },
+                { emoji: '🔵', label: 'Zoom' },
+                { emoji: '🟣', label: 'Teams' },
+                { emoji: '🌐', label: 'WebEx' },
+                { emoji: '💬', label: 'Slack' },
+                { emoji: '💻', label: 'HackerRank' },
+              ].map(({ emoji, label }) => (
+                <div key={label} className="flex flex-col items-center gap-1.5 w-16">
+                  <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center text-xl border border-white/20">
+                    {emoji}
+                  </div>
+                  <span className="text-[10px] font-medium text-white/70 text-center leading-tight">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Cards inferiores */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div
+              className="rounded-2xl p-7 space-y-3"
+              style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+            >
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/20 text-white border border-white/30 tracking-wide uppercase">
+                En tiempo real
+              </span>
+              <h3 className="text-lg font-bold text-white leading-snug">Transcripción automática</h3>
+              <p className="text-sm text-white/75 leading-relaxed">
+                Captura el audio del sistema y transcribe cada pregunta al instante con Deepgram Nova-2. Latencia menor a 1.5 segundos.
+              </p>
+            </div>
+
+            <div
+              className="rounded-2xl p-7 space-y-3"
+              style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+            >
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/20 text-white border border-white/30 tracking-wide uppercase">
+                IA generativa
+              </span>
+              <h3 className="text-lg font-bold text-white leading-snug">Respuestas personalizadas</h3>
+              <p className="text-sm text-white/75 leading-relaxed">
+                Claude genera respuestas usando tu CV y perfil. Aparecen como teleprompter invisible — solo vos las ves.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA Final ────────────────────────────────────────────────────── */}
       <section className="py-24 bg-gray-50">
         <div className="max-w-md mx-auto px-6 text-center">

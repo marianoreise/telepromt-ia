@@ -54,10 +54,7 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
         <div className="flex items-center gap-3 mb-8">
-          <Image src="/logo.png" alt="listnr.io" width={52} height={52} className="rounded-xl" />
-          <span className="text-3xl font-bold tracking-tight" style={{ color: '#1B6CA8' }}>
-            listnr<span style={{ color: '#F5A623' }}>.io</span>
-          </span>
+          <Image src="/logo.png" alt="listnr.io" width={180} height={60} style={{ height: 'auto' }} />
         </div>
         <Card className="w-full max-w-md border border-gray-100 shadow-sm text-center">
           <CardHeader>

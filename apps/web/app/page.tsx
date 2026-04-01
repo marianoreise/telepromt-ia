@@ -10,7 +10,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <Image src="/logo.png" alt="listnr.io" width={48} height={48} className="" priority />
+            <Image src="/logo.png" alt="listnr.io" width={140} height={48} style={{ height: 'auto' }} className="" priority />
           </Link>
           <div className="flex items-center gap-3">
             <Link
@@ -34,7 +34,7 @@ export default function LandingPage() {
       <section className="max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
         {/* Logo prominente en hero */}
         <div className="flex justify-center mb-8" style={{ background: '#ffffff' }}>
-          <Image src="/logo.png" alt="listnr.io" width={180} height={180} className="" priority />
+          <Image src="/logo.png" alt="listnr.io" width={280} height={93} style={{ height: 'auto' }} className="" priority />
         </div>
 
         <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1.5 rounded-full mb-8 border border-blue-100">
@@ -291,7 +291,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
             <div className="flex items-center gap-3">
-              <Image src="/logo.png" alt="listnr.io" width={32} height={32} className="" />
+              <Image src="/logo.png" alt="listnr.io" width={100} height={33} style={{ height: 'auto' }} className="" />
               <span className="text-lg font-bold text-white">
                 listnr<span style={{ color: '#F5A623' }}>.io</span>
               </span>

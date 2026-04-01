@@ -48,13 +48,10 @@ export default function Sidebar({ user }: { user: User }) {
           <Image
             src="/logo.png"
             alt="listnr.io"
-            width={55}
-            height={55}
-            className="rounded-xl"
+            width={160}
+            height={53}
+            style={{ height: 'auto' }}
           />
-          <span className="font-bold text-2xl tracking-tight" style={{ color: '#1B6CA8' }}>
-            listnr<span style={{ color: '#F5A623' }}>.io</span>
-          </span>
         </Link>
       </div>
 

@@ -38,7 +38,7 @@ export default function LandingPage() {
         </div>
 
         <p className="text-5xl sm:text-6xl font-bold tracking-tight leading-tight text-[#1B6CA8] mb-6">
-          Asistente IA en tiempo real · gratuito para empezar
+          Asistente IA en tiempo real
         </p>
 
         <h1 className="text-5xl sm:text-6xl font-bold tracking-tight leading-tight text-gray-900 mb-6">

@@ -37,10 +37,9 @@ export default function LandingPage() {
           <Image src="/logo.png" alt="listnr.io" width={280} height={93} style={{ height: 'auto' }} className="" priority />
         </div>
 
-        <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-xs font-medium px-3 py-1.5 rounded-full mb-8 border border-blue-100">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+        <p className="text-5xl sm:text-6xl font-bold tracking-tight leading-tight text-[#1B6CA8] mb-6">
           Asistente IA en tiempo real · gratuito para empezar
-        </div>
+        </p>
 
         <h1 className="text-5xl sm:text-6xl font-bold tracking-tight leading-tight text-gray-900 mb-6">
           No más miedo a las<br />

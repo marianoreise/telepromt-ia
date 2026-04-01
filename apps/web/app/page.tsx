@@ -37,7 +37,7 @@ export default function LandingPage() {
       <section className="max-w-5xl mx-auto px-6 pt-24 pb-20 text-center">
         {/* Logo prominente en hero */}
         <div className="flex items-center justify-center gap-4 mb-8">
-          <Image src="/logo.png" alt="listnr.io" width={64} height={64} className="rounded-2xl shadow-md" />
+          <Image src="/logo.png" alt="listnr.io" width={64} height={64} className="rounded-2xl" />
           <span className="text-4xl font-bold tracking-tight">
             listnr<span style={{ color: '#F5A623' }}>.io</span>
           </span>

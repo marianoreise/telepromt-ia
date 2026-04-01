@@ -30,14 +30,19 @@ export default async function DashboardPage({
   const params = await searchParams
   if (params.desktop_auth === 'true') {
     const supabase = await createClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session?.access_token) {
-      return (
-        <DesktopAuthRedirect
-          accessToken={session.access_token}
-          refreshToken={session.refresh_token ?? ''}
-        />
-      )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      // getSession is acceptable here only to extract the token for the deep link —
+      // the user identity was already verified by getUser() above.
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.access_token) {
+        return (
+          <DesktopAuthRedirect
+            accessToken={session.access_token}
+            refreshToken={session.refresh_token ?? ''}
+          />
+        )
+      }
     }
   }
 

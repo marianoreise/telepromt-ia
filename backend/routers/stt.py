@@ -36,6 +36,9 @@ router = APIRouter(prefix="/ws", tags=["stt"])
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
+FREE_SESSION_SECONDS = 600  # 10 minutes for zero-balance users
+FREE_WARN_SECONDS = 30       # warn 30 seconds before expiry
+
 
 def _verify_token(token: str) -> tuple[str, str]:
     """Returns (user_id, email). Raises ValueError on invalid token."""
@@ -64,6 +67,7 @@ async def stt_endpoint(ws: WebSocket) -> None:
     session_id = str(uuid.uuid4())
     dg_session: DeepgramStreamingSession | None = None
     billing: SessionBillingTracker | None = None
+    free_limit_task: asyncio.Task | None = None
     user_id: str | None = None
 
     try:
@@ -96,6 +100,20 @@ async def stt_endpoint(ws: WebSocket) -> None:
         # ── 3. Start billing tracker ─────────────────────────────────────────
         billing = SessionBillingTracker(user_id=user_id, session_id=session_id)
         billing.start()
+
+        # ── 3b. Free-tier hard limit: enforce 10 min if balance == 0 ─────────
+        if balance.available == 0:
+            async def _free_session_watchdog() -> None:
+                await asyncio.sleep(FREE_SESSION_SECONDS - FREE_WARN_SECONDS)
+                try:
+                    await ws.send_json({"type": "warn", "seconds_remaining": FREE_WARN_SECONDS})
+                    await asyncio.sleep(FREE_WARN_SECONDS)
+                    await ws.send_json({"type": "out_of_credits"})
+                    await ws.close(code=1000)
+                except Exception:
+                    pass
+
+            free_limit_task = asyncio.create_task(_free_session_watchdog())
 
         # ── 4. Background task: pipe Deepgram transcripts → WS + trigger AI ─
         last_transcript: list[str] = ['']  # mutable container para compartir entre tareas
@@ -170,6 +188,8 @@ async def stt_endpoint(ws: WebSocket) -> None:
             await dg_session.stop()
         if billing:
             await billing.stop()
+        if free_limit_task and not free_limit_task.done():
+            free_limit_task.cancel()
         try:
             transcript_task.cancel()
         except Exception:

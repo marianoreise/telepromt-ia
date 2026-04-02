@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RoleCombobox } from '@/components/role-combobox'
 import { createClient } from '@/lib/supabase/client'
 import { setSharedStream } from '@/lib/session-stream'
 import type { SessionDetail, ActiveSessionConflict } from '@/types/session'
@@ -255,10 +256,10 @@ export default function NuevaSessionModal({ open, onOpenChange, onSessionCreated
             </div>
             <div className="space-y-1.5">
               <Label>Puesto</Label>
-              <Input
-                placeholder="Software Engineer, Product Manager..."
+              <RoleCombobox
                 value={config.jobTitle}
-                onChange={e => update({ jobTitle: e.target.value })}
+                onChange={v => update({ jobTitle: v })}
+                placeholder="Seleccioná el puesto..."
               />
             </div>
             <div className="space-y-1.5">

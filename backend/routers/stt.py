@@ -78,10 +78,22 @@ async def stt_endpoint(ws: WebSocket) -> None:
         forced_lang = handshake.get("language")
 
         try:
-            user_id, _email = _verify_token(token)
+            # Validar token usando el SDK de Supabase (soporta ES256 y HS256 automáticamente)
+            db = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+            response = db.auth.get_user(token)
+            if not response.user:
+                raise ValueError("Token inválido: usuario no encontrado")
+            user_id = str(response.user.id)
+            _email = response.user.email or ""
+            logger.info("WebSocket auth OK: user=%s", user_id)
         except ValueError as exc:
             logger.error("Token verification failed: %s", exc)
             await ws.send_json({"type": "error", "message": str(exc)})
+            await ws.close(code=4001)
+            return
+        except Exception as exc:
+            logger.error("Token verification exception: %s", exc)
+            await ws.send_json({"type": "error", "message": "Token inválido"})
             await ws.close(code=4001)
             return
 

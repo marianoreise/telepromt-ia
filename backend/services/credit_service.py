@@ -17,14 +17,14 @@ CREDITS_PER_INTERVAL = 0.5
 BILLING_INTERVAL_SECONDS = 30 * 60  # 30 minutes
 WARN_THRESHOLD_SECONDS = 30  # warn when 30 seconds remain in interval
 
-_supabase_client: Client | None = None
-
-
 def _get_supabase() -> Client:
-    global _supabase_client
-    if _supabase_client is None:
-        _supabase_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-    return _supabase_client
+    """Crea un cliente Supabase fresco con service role key como auth header."""
+    from supabase.lib.client_options import ClientOptions
+    return create_client(
+        SUPABASE_URL,
+        SUPABASE_SERVICE_KEY,
+        options=ClientOptions(headers={"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}"}),
+    )
 
 
 @dataclass

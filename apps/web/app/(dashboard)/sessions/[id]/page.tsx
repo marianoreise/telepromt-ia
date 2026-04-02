@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -24,10 +24,11 @@ async function getToken(): Promise<string> {
 }
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export default function SessionDetailPage({ params }: PageProps) {
+  const { id } = use(params)
   const router = useRouter()
   const [session, setSession] = useState<SessionDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -37,7 +38,7 @@ export default function SessionDetailPage({ params }: PageProps) {
   const fetchSession = useCallback(async () => {
     try {
       const token = await getToken()
-      const res = await fetch(`${API_URL}/sessions/${params.id}`, {
+      const res = await fetch(`${API_URL}/sessions/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (res.ok) {
@@ -53,7 +54,7 @@ export default function SessionDetailPage({ params }: PageProps) {
     } finally {
       setLoading(false)
     }
-  }, [params.id])
+  }, [id])
 
   useEffect(() => { fetchSession() }, [fetchSession])
 
@@ -62,7 +63,7 @@ export default function SessionDetailPage({ params }: PageProps) {
     if (!session || session.status !== 'active') return
     const interval = setInterval(async () => {
       const token = await getToken()
-      const res = await fetch(`${API_URL}/sessions/${params.id}`, {
+      const res = await fetch(`${API_URL}/sessions/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (res.ok) {
@@ -71,7 +72,7 @@ export default function SessionDetailPage({ params }: PageProps) {
       }
     }, 30_000)
     return () => clearInterval(interval)
-  }, [session?.status, params.id])
+  }, [session?.status, id])
 
   async function handleEndSession() {
     if (!session) return

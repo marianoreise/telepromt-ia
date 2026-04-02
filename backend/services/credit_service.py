@@ -5,11 +5,11 @@ import asyncio
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 
-from supabase import create_client, Client
+import httpx
 
 logger = logging.getLogger(__name__)
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
 # Billing: 0.5 credits per 30 min of active session
@@ -17,14 +17,14 @@ CREDITS_PER_INTERVAL = 0.5
 BILLING_INTERVAL_SECONDS = 30 * 60  # 30 minutes
 WARN_THRESHOLD_SECONDS = 30  # warn when 30 seconds remain in interval
 
-def _get_supabase() -> Client:
-    """Crea un cliente Supabase fresco con service role key como auth header."""
-    from supabase.lib.client_options import ClientOptions
-    return create_client(
-        SUPABASE_URL,
-        SUPABASE_SERVICE_KEY,
-        options=ClientOptions(headers={"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}"}),
-    )
+
+def _headers() -> dict:
+    """Headers para requests con service role key."""
+    return {
+        "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+        "apikey": SUPABASE_SERVICE_KEY,
+        "Content-Type": "application/json",
+    }
 
 
 @dataclass
@@ -34,37 +34,47 @@ class CreditBalance:
 
 
 async def get_balance(user_id: str) -> CreditBalance:
-    """Return current credit balance for a user."""
-    db = _get_supabase()
-    result = db.from_("user_credits").select("balance").eq("user_id", user_id).single().execute()
-    balance = result.data.get("balance", 0.0) if result.data else 0.0
-    return CreditBalance(available=float(balance))
+    """Return current credit balance for a user via REST directo."""
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                f"{SUPABASE_URL}/rest/v1/user_credits",
+                headers=_headers(),
+                params={"select": "balance", "user_id": f"eq.{user_id}"},
+            )
+        if resp.status_code == 200:
+            data = resp.json()
+            balance = data[0].get("balance", 0.0) if data else 0.0
+            return CreditBalance(available=float(balance))
+        logger.error("get_balance HTTP %s: %s", resp.status_code, resp.text[:200])
+    except Exception as exc:
+        logger.error("get_balance error: %s", exc)
+    return CreditBalance(available=0.0)
 
 
 async def deduct_credits(user_id: str, session_id: str, amount: float = CREDITS_PER_INTERVAL) -> bool:
     """
-    Deduct credits for a billing interval.
+    Deduct credits via RPC directo.
     Returns True if successful, False if insufficient credits.
     """
-    db = _get_supabase()
     try:
-        # Atomic deduction via RPC (defined in migration)
-        result = db.rpc(
-            "deduct_session_credits",
-            {
-                "p_user_id": user_id,
-                "p_session_id": session_id,
-                "p_amount": amount,
-                "p_description": f"Sesión activa — 30 min",
-            },
-        ).execute()
-        success = result.data if result.data is not None else False
-        if not success:
-            logger.info("Insufficient credits for user %s", user_id)
-        return bool(success)
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                f"{SUPABASE_URL}/rest/v1/rpc/deduct_session_credits",
+                headers=_headers(),
+                json={
+                    "p_user_id": user_id,
+                    "p_session_id": session_id,
+                    "p_amount": amount,
+                    "p_description": "Sesión activa — 30 min",
+                },
+            )
+        if resp.status_code == 200:
+            return bool(resp.json())
+        logger.error("deduct_credits HTTP %s: %s", resp.status_code, resp.text[:200])
     except Exception as exc:
-        logger.error("Credit deduction error for %s: %s", user_id, exc)
-        return False
+        logger.error("deduct_credits error: %s", exc)
+    return False
 
 
 @dataclass

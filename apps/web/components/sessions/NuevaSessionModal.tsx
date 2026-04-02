@@ -23,11 +23,10 @@ type WizardStep =
   | 'language'
   | 'autogenerate'
   | 'transcript'
-  | 'summary'
   | 'connect'
 
 const STEP_ORDER: WizardStep[] = [
-  'setup', 'documents', 'language', 'autogenerate', 'transcript', 'summary', 'connect',
+  'setup', 'documents', 'language', 'autogenerate', 'transcript', 'connect',
 ]
 
 const STEP_TITLES: Record<WizardStep, string> = {
@@ -36,7 +35,6 @@ const STEP_TITLES: Record<WizardStep, string> = {
   language:    'Idioma y configuración IA',
   autogenerate:'Auto generar respuesta IA',
   transcript:  'Guardar transcripción',
-  summary:     'Listo para crear',
   connect:     'Conectar',
 }
 
@@ -459,38 +457,6 @@ export default function NuevaSessionModal({ open, onOpenChange, onSessionCreated
           </div>
         )
 
-      case 'summary':
-        return (
-          <div className="space-y-3">
-            <p className="text-sm text-gray-500">Revisá la configuración antes de conectar.</p>
-            <div className="rounded-xl border border-gray-200 divide-y divide-gray-100 text-sm">
-              {[
-                { label: 'Empresa', value: config.company },
-                { label: 'Puesto', value: config.jobTitle },
-                { label: 'CV', value: config.cvSource ?? 'Sin CV' },
-                { label: 'Doc adicional', value: config.additionalDoc?.name ?? 'Ninguno' },
-                {
-                  label: 'Idioma',
-                  value: { es: 'Castellano', en: 'Inglés', 'es-en': 'Cast / Inglés' }[config.language],
-                },
-                {
-                  label: 'Modelo IA',
-                  value: config.aiModel.includes('sonnet') ? 'Claude Sonnet' : 'Claude Haiku',
-                },
-                { label: 'Auto generar', value: config.autoGenerate ? 'Activado' : 'Desactivado' },
-                { label: 'Transcripción', value: config.saveTranscript ? 'Guardar' : 'No guardar' },
-              ].map(row => (
-                <div key={row.label} className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-xs font-medium text-gray-400">{row.label}</span>
-                  <span className="text-xs text-gray-900 font-medium max-w-[200px] truncate text-right">
-                    {row.value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-
       case 'connect':
         return (
           <div className="space-y-4">
@@ -517,17 +483,73 @@ export default function NuevaSessionModal({ open, onOpenChange, onSessionCreated
               </p>
               <div className="flex flex-wrap gap-2 pt-1">
                 {[
-                  { label: 'Google Meet', emoji: '🟢' },
-                  { label: 'Zoom', emoji: '🔵' },
-                  { label: 'Teams', emoji: '🟣' },
-                  { label: 'WebEx', emoji: '🌐' },
-                  { label: 'Slack', emoji: '💬' },
+                  {
+                    label: 'Google Meet',
+                    icon: (
+                      <svg viewBox="0 0 87.5 87.5" width="16" height="16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M50 28.75H12.5A12.5 12.5 0 0 0 0 41.25v5l12.5 7.5 12.5-7.5V53.75h25V41.25A12.5 12.5 0 0 0 50 28.75z" fill="#00832d"/>
+                        <path d="M0 41.25v21.25A12.5 12.5 0 0 0 12.5 75H50a12.5 12.5 0 0 0 12.5-12.5V53.75l-25 .001V46.25L25 53.75l-12.5-7.5v-5z" fill="#0066da"/>
+                        <path d="M50 28.75H37.5v17.5l12.5 7.5 12.5-7.5V41.25A12.5 12.5 0 0 0 50 28.75z" fill="#e94235"/>
+                        <path d="M62.5 53.75v8.75A12.5 12.5 0 0 1 50 75H12.5l12.5 12.5H50A25 25 0 0 0 75 62.5V41.25z" fill="#00ac47"/>
+                        <path d="M75 16.25L62.5 28.75v25l12.5 12.5V41.25l12.5-12.5z" fill="#ffba00"/>
+                        <path d="M87.5 28.75H75L62.5 16.25H50A25 25 0 0 0 25 41.25v5l12.5-7.5v-5A12.5 12.5 0 0 1 50 21.25h12.5L75 28.75z" fill="#00832d"/>
+                        <path d="M75 28.75h12.5v33.75H75z" fill="#ffba00"/>
+                      </svg>
+                    ),
+                  },
+                  {
+                    label: 'Zoom',
+                    icon: (
+                      <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M24 12c0 6.627-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0s12 5.373 12 12z" fill="#2D8CFF"/>
+                        <path d="M5.5 8.5a1.5 1.5 0 0 1 1.5-1.5h7a1.5 1.5 0 0 1 1.5 1.5v4.25l3-2v4.5l-3-2V15.5a1.5 1.5 0 0 1-1.5 1.5H7a1.5 1.5 0 0 1-1.5-1.5v-7z" fill="#fff"/>
+                      </svg>
+                    ),
+                  },
+                  {
+                    label: 'Teams',
+                    icon: (
+                      <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20.625 5.625h-6.75A.375.375 0 0 0 13.5 6v3.375h3a2.25 2.25 0 0 1 2.25 2.25v3.75a2.25 2.25 0 0 1-2.25 2.25H13.5V18a.375.375 0 0 0 .375.375h6.75A.375.375 0 0 0 21 18V6a.375.375 0 0 0-.375-.375z" fill="#5059C9"/>
+                        <circle cx="18.375" cy="3.75" r="1.875" fill="#5059C9"/>
+                        <circle cx="9.75" cy="4.125" r="2.625" fill="#7B83EB"/>
+                        <path d="M15.375 11.625a2.25 2.25 0 0 0-2.25-2.25H5.25a2.25 2.25 0 0 0-2.25 2.25v5.25a5.25 5.25 0 0 0 10.5 0v-5.25z" fill="#7B83EB"/>
+                        <path d="M9.75 6.75H5.25A2.25 2.25 0 0 0 3 9v6.75a5.25 5.25 0 0 0 6.75 5.055V6.75z" fill="#4B53BC" opacity=".1"/>
+                        <path d="M9.75 6.75v14.498A5.25 5.25 0 0 0 15 16.125v-4.5a2.25 2.25 0 0 0-2.25-2.25H9.75z" fill="#4B53BC" opacity=".2"/>
+                      </svg>
+                    ),
+                  },
+                  {
+                    label: 'WebEx',
+                    icon: (
+                      <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0z" fill="#00BCEB"/>
+                        <path d="M18.5 7.5l-3 4.5 3 4.5h-3l-1.5-2.25L12.5 16.5h-3l3-4.5-3-4.5h3l1.5 2.25L15.5 7.5z" fill="#fff"/>
+                        <path d="M8 7.5v9H5.5v-9z" fill="#fff"/>
+                      </svg>
+                    ),
+                  },
+                  {
+                    label: 'Slack',
+                    icon: (
+                      <svg viewBox="0 0 24 24" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52z" fill="#E01E5A"/>
+                        <path d="M6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313z" fill="#E01E5A"/>
+                        <path d="M8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834z" fill="#36C5F0"/>
+                        <path d="M8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312z" fill="#36C5F0"/>
+                        <path d="M18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834z" fill="#2EB67D"/>
+                        <path d="M17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312z" fill="#2EB67D"/>
+                        <path d="M15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52z" fill="#ECB22E"/>
+                        <path d="M15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z" fill="#ECB22E"/>
+                      </svg>
+                    ),
+                  },
                 ].map(p => (
                   <div
                     key={p.label}
                     className="flex items-center gap-1.5 bg-white/15 border border-white/20 rounded-lg px-3 py-1.5"
                   >
-                    <span className="text-sm">{p.emoji}</span>
+                    {p.icon}
                     <span className="text-xs font-medium text-white">{p.label}</span>
                   </div>
                 ))}

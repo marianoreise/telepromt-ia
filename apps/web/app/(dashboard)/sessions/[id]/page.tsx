@@ -203,7 +203,13 @@ function ActiveSessionView({
       const cfg = storedConfig ? JSON.parse(storedConfig) : null
       const lang = cfg?.language ?? session.language ?? 'es'
 
-      await connect(token, lang)
+      await connect(token, lang, {
+        company: cfg?.company ?? session.company ?? '',
+        job_title: cfg?.jobTitle ?? session.job_title ?? '',
+        extra_context: cfg?.extraContext ?? '',
+        ai_model: cfg?.aiModel ?? '',
+        auto_generate: cfg?.autoGenerate ?? true,
+      })
 
       // Si el wizard pasó un stream, usarlo para auto-iniciar
       const sharedStream = consumeSharedStream()
@@ -476,6 +482,7 @@ function EndedSessionView({
   formatDate: (iso: string) => string
 }) {
   const router = useRouter()
+  const [showTranscript, setShowTranscript] = useState(false)
   const isExpired = session.status === 'expired'
 
   return (
@@ -541,16 +548,43 @@ function EndedSessionView({
           onClick={onBack}
           className="flex-1"
         >
-          Ver historial
+          Dashboard
         </Button>
-        <Button
-          onClick={() => router.push('/sessions')}
-          className="flex-1 text-white gap-2"
-          style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
-        >
-          Nueva sesión
-        </Button>
+        {session.transcript && (
+          <Button
+            onClick={() => setShowTranscript(v => !v)}
+            className="flex-1 text-white gap-2"
+            style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+          >
+            {showTranscript ? 'Ocultar transcripción' : 'Ver transcripción'}
+          </Button>
+        )}
+        {!session.transcript && (
+          <Button
+            onClick={() => router.push('/sessions')}
+            className="flex-1 text-white gap-2"
+            style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+          >
+            Nueva sesión
+          </Button>
+        )}
       </div>
+
+      {/* Transcripción expandible */}
+      {showTranscript && session.transcript && (
+        <Card className="border border-gray-100 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Transcripción</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="max-h-96 overflow-y-auto pr-1">
+              {session.transcript.split('\n').map((line, i) => (
+                <p key={i} className="text-sm text-gray-700 leading-relaxed mb-1">{line}</p>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

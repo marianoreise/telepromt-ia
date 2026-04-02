@@ -50,9 +50,16 @@ class DeepgramStreamingSession:
         opts = DeepgramClientOptions(api_key=DEEPGRAM_API_KEY)
         client = DeepgramClient(config=opts)
 
+        # Build language options: mixed mode uses detect_language (Nova-2 auto-detect)
+        if self._language == "es-en":
+            lang_kwargs: dict = {"detect_language": True}
+        elif self._language == "en":
+            lang_kwargs = {"language": "en-US"}
+        else:  # "es" default
+            lang_kwargs = {"language": "es-419"}
+
         audio_config = LiveOptions(
             model="nova-2",
-            language="es-419" if self._language == "es" else "en-US",
             smart_format=True,
             interim_results=True,
             utterance_end_ms="1000",
@@ -61,6 +68,7 @@ class DeepgramStreamingSession:
             sample_rate=16000,
             channels=1,
             punctuate=True,
+            **lang_kwargs,
         )
 
         self._dg_connection = client.listen.asyncwebsocket.v("1")

@@ -49,6 +49,7 @@ class SessionDetail(BaseModel):
     job_title: str
     status: str
     seconds_remaining: int | None
+    transcript: str | None = None
 
 
 class SessionCreateRequest(BaseModel):
@@ -206,7 +207,7 @@ async def get_session(
 
     result = (
         db.from_("sessions")
-        .select("id, started_at, ended_at, duration_sec, credits_used, company, job_title, status")
+        .select("id, started_at, ended_at, duration_sec, credits_used, company, job_title, status, transcript")
         .eq("id", session_id)
         .eq("user_id", user.id)
         .single()
@@ -245,6 +246,7 @@ async def get_session(
                 job_title=row["job_title"],
                 status="expired",
                 seconds_remaining=None,
+                transcript=row.get("transcript"),
             )
 
     return SessionDetail(
@@ -257,6 +259,7 @@ async def get_session(
         job_title=row["job_title"],
         status=row["status"],
         seconds_remaining=seconds_remaining,
+        transcript=row.get("transcript"),
     )
 
 

@@ -36,6 +36,9 @@ router = APIRouter(prefix="/ws", tags=["stt"])
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+
 FREE_SESSION_SECONDS = 600  # 10 minutes for zero-balance users
 FREE_WARN_SECONDS = 30       # warn 30 seconds before expiry
 
@@ -76,6 +79,11 @@ async def stt_endpoint(ws: WebSocket) -> None:
         handshake = json.loads(raw)
         token = handshake.get("token", "")
         forced_lang = handshake.get("language")
+        session_company = handshake.get("company", "")
+        session_job_title = handshake.get("job_title", "")
+        session_extra_context = handshake.get("extra_context", "")
+        session_ai_model = handshake.get("ai_model", "")
+        session_auto_generate = handshake.get("auto_generate", True)
 
         try:
             # v4 — Validar token via HTTP async directo a Supabase (no usa PyJWT)
@@ -140,6 +148,7 @@ async def stt_endpoint(ws: WebSocket) -> None:
 
         # ── 4. Background task: pipe Deepgram transcripts → WS + trigger AI ─
         last_transcript: list[str] = ['']  # mutable container para compartir entre tareas
+        full_transcript: list[str] = []   # acumula todos los chunks finales
 
         async def process_transcripts() -> None:
             async for result in dg_session.transcripts():
@@ -150,13 +159,17 @@ async def stt_endpoint(ws: WebSocket) -> None:
                 })
 
                 # Guardar el último transcript final para request_ai manual
+                # y acumular para guardar al cerrar la sesión
                 if result.is_final and result.text.strip():
                     last_transcript[0] = result.text
+                    full_transcript.append(result.text)
 
                 # Trigger AI automático en speech_final con pregunta detectada
-                if result.speech_final and is_question(result.text):
+                if session_auto_generate and result.speech_final and is_question(result.text):
                     asyncio.create_task(
-                        _stream_ai_to_ws(ws, user_id, result.text, language)
+                        _stream_ai_to_ws(ws, user_id, result.text, language,
+                                         session_company, session_job_title,
+                                         session_extra_context, session_ai_model)
                     )
 
         transcript_task = asyncio.create_task(process_transcripts())
@@ -191,7 +204,9 @@ async def stt_endpoint(ws: WebSocket) -> None:
                         question = last_transcript[0].strip()
                         if question:
                             asyncio.create_task(
-                                _stream_ai_to_ws(ws, user_id, question, language)
+                                _stream_ai_to_ws(ws, user_id, question, language,
+                                                 session_company, session_job_title,
+                                                 session_extra_context, session_ai_model)
                             )
                         else:
                             await ws.send_json({"type": "warn", "message": "Sin transcripción disponible"})
@@ -217,6 +232,19 @@ async def stt_endpoint(ws: WebSocket) -> None:
             transcript_task.cancel()
         except Exception:
             pass
+
+        # Guardar transcripción acumulada en la sesión
+        if full_transcript and session_id:
+            try:
+                transcript_text = "\n".join(full_transcript)
+                db = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+                db.from_("sessions").update(
+                    {"transcript": transcript_text}
+                ).eq("id", session_id).execute()
+                logger.info("Transcript saved for session %s (%d chars)", session_id, len(transcript_text))
+            except Exception as exc:
+                logger.warning("Failed to save transcript for session %s: %s", session_id, exc)
+
         logger.info("Session %s closed (user=%s)", session_id, user_id)
 
 
@@ -225,11 +253,17 @@ async def _stream_ai_to_ws(
     user_id: str,
     question: str,
     language: str,
+    company: str = "",
+    job_title: str = "",
+    extra_context: str = "",
+    ai_model: str = "",
 ) -> None:
     """Stream AI response chunks to WebSocket client."""
     try:
         await ws.send_json({"type": "ai_start"})
-        async for chunk in stream_ai_response(user_id, question, language):
+        async for chunk in stream_ai_response(
+            user_id, question, language, company, job_title, extra_context, ai_model
+        ):
             await ws.send_json({"type": "ai_chunk", "chunk": chunk})
         await ws.send_json({"type": "ai_done"})
     except Exception as exc:

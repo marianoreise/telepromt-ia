@@ -20,16 +20,40 @@ EMBED_DIMS = 1536
 TOP_K = 4
 MAX_CONTEXT_CHARS = 3000
 
-SYSTEM_PROMPT = """Eres un asistente experto en entrevistas y videollamadas profesionales.
-Tu rol es ayudar al usuario respondiendo preguntas en tiempo real, de forma concisa y directa.
+_BASE_SYSTEM_PROMPT = """Sos un asistente de entrevistas en tiempo real. Tu trabajo es ayudar al candidato a responder preguntas durante su entrevista de trabajo.
+
+CRÍTICO: Escribí las respuestas EN PRIMERA PERSONA como si fueras el candidato hablando. Nunca te presentes como IA ni menciones que sos Claude o un asistente. Respondé directamente como si fueras la persona entrevistándose.
+
+Ejemplos correctos:
+- "Tengo 5 años de experiencia en desarrollo backend con Python..."
+- "En mi último proyecto lideré un equipo de 4 personas..."
+- "Mi mayor fortaleza es la capacidad de aprender rápido..."
 
 Reglas:
-- Respuestas breves (máximo 3-4 oraciones a menos que se pida más)
-- Usa el contexto del CV/conocimiento del usuario si está disponible
-- Si no sabés la respuesta, decilo honestamente
-- Idioma: responde en el mismo idioma que la pregunta
-- No uses markdown en tu respuesta (se mostrará en pantalla como texto plano)
-- Empieza directo con la respuesta, sin preámbulos"""
+- Máximo 3-4 oraciones (a menos que se pida más detalle)
+- Primera persona siempre ("Tengo", "Trabajé", "Mi experiencia...", "I have", "I worked")
+- Sin markdown — texto plano
+- Respondé en el mismo idioma que la pregunta
+- Si hay datos del CV, usalos para personalizar la respuesta
+- Empezá directo con la respuesta, sin preámbulos"""
+
+
+def _build_system_prompt(
+    company: str = "",
+    job_title: str = "",
+    extra_context: str = "",
+) -> str:
+    parts = [_BASE_SYSTEM_PROMPT]
+    if company or job_title:
+        parts.append(
+            f"\nContexto de la entrevista: el candidato está entrevistando"
+            + (f" para el puesto de {job_title}" if job_title else "")
+            + (f" en {company}" if company else "")
+            + "."
+        )
+    if extra_context:
+        parts.append(f"\nInstrucciones adicionales: {extra_context}")
+    return "".join(parts)
 
 _anthropic_client: anthropic.AsyncAnthropic | None = None
 _openai_client: AsyncOpenAI | None = None
@@ -97,6 +121,10 @@ async def stream_ai_response(
     user_id: str,
     question: str,
     language: str = "es",
+    company: str = "",
+    job_title: str = "",
+    extra_context: str = "",
+    ai_model: str = "",
 ) -> AsyncGenerator[str, None]:
     """
     Stream Claude response for a given question.
@@ -108,15 +136,18 @@ async def stream_ai_response(
     user_message = question
     if context:
         user_message = (
-            f"Contexto relevante de mi CV/conocimiento:\n{context}\n\n"
-            f"Pregunta: {question}"
+            f"Información de mi CV/perfil:\n{context}\n\n"
+            f"Pregunta de la entrevista: {question}"
         )
+
+    model = ai_model if ai_model else CLAUDE_MODEL
+    system_prompt = _build_system_prompt(company, job_title, extra_context)
 
     try:
         async with _get_anthropic().messages.stream(
-            model=CLAUDE_MODEL,
+            model=model,
             max_tokens=512,
-            system=SYSTEM_PROMPT,
+            system=system_prompt,
             messages=[{"role": "user", "content": user_message}],
         ) as stream:
             async for text in stream.text_stream:

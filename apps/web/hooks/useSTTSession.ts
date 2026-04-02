@@ -79,7 +79,17 @@ export function useSTTSession() {
 
   // ── Connect to backend WebSocket ─────────────────────────────────────────
   const connect = useCallback(
-    async (token: string, language: string) => {
+    async (
+      token: string,
+      language: string,
+      sessionConfig?: {
+        company?: string
+        job_title?: string
+        extra_context?: string
+        ai_model?: string
+        auto_generate?: boolean
+      }
+    ) => {
       if (wsRef.current) return
 
       updateState({ status: 'connecting', error: null })
@@ -88,7 +98,7 @@ export function useSTTSession() {
       wsRef.current = ws
 
       ws.onopen = () => {
-        ws.send(JSON.stringify({ token, language }))
+        ws.send(JSON.stringify({ token, language, ...sessionConfig }))
       }
 
       ws.onmessage = (event) => {

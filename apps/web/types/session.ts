@@ -11,6 +11,7 @@ export interface SessionDetail {
   status: SessionStatus
   seconds_remaining: number | null
   language?: string
+  transcript?: string | null
 }
 
 export interface SessionSummary {

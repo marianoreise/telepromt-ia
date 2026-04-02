@@ -48,6 +48,7 @@ export interface STTSessionState {
   balance: number | null
   error: string | null
   sessionId: string | null
+  displayStream: MediaStream | null
 }
 
 const INITIAL_STATE: STTSessionState = {
@@ -60,6 +61,7 @@ const INITIAL_STATE: STTSessionState = {
   balance: null,
   error: null,
   sessionId: null,
+  displayStream: null,
 }
 
 export function useSTTSession() {
@@ -163,21 +165,25 @@ export function useSTTSession() {
   )
 
   // ── Start audio capture ───────────────────────────────────────────────────
-  const startListening = useCallback(async (source: AudioSource = 'mic') => {
+  const startListening = useCallback(async (source: AudioSource = 'mic', existingStream?: MediaStream) => {
     try {
       let stream: MediaStream
 
-      if (source === 'system') {
-        const displayStream = await navigator.mediaDevices.getDisplayMedia({
+      if (existingStream) {
+        stream = existingStream
+      } else if (source === 'system') {
+        stream = await navigator.mediaDevices.getDisplayMedia({
           audio: true,
-          video: false,
+          video: true,
         } as DisplayMediaStreamOptions)
-        stream = displayStream
       } else {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       }
 
       streamRef.current = stream
+      // Expose the stream so the UI can render the video track
+      const isDisplayShare = source === 'system' || !!existingStream
+      updateState({ displayStream: isDisplayShare ? stream : null })
 
       const audioCtx = new AudioContext({ sampleRate: 16000 })
       audioCtxRef.current = audioCtx
@@ -223,9 +229,9 @@ export function useSTTSession() {
     // terminal states such as 'out_of_credits' or 'error'.
     setState((prev) => {
       if (prev.status === 'listening' && wsRef.current?.readyState === WebSocket.OPEN) {
-        return { ...prev, status: 'connected' }
+        return { ...prev, status: 'connected', displayStream: null }
       }
-      return prev
+      return { ...prev, displayStream: null }
     })
   }, [])
 

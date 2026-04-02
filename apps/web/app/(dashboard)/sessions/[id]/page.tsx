@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, use } from 'react'
+import { useState, useEffect, useCallback, useRef, use, useLayoutEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,8 @@ import { useSTTSession, type AudioSource } from '@/hooks/useSTTSession'
 import { formatDuration } from '@/lib/format-duration'
 import type { SessionDetail } from '@/types/session'
 import Image from 'next/image'
-import { ArrowLeft, Radio, Mic, MicOff, Monitor, Sparkles, Loader2 } from 'lucide-react'
+import { ArrowLeft, Radio, Mic, MicOff, Monitor, Sparkles, Loader2, X, GripVertical } from 'lucide-react'
+import { consumeSharedStream } from '@/lib/session-stream'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''
 const FREE_SESSION_SECONDS = 600
@@ -160,8 +161,12 @@ function ActiveSessionView({
   ending: boolean
 }) {
   const [expired, setExpired] = useState(false)
-  const [audioSource, setAudioSource] = useState<AudioSource>('mic')
+  const [leftPct, setLeftPct] = useState(55) // % de ancho del panel izquierdo
+  const [showAI, setShowAI] = useState(false)
   const transcriptEndRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const dragging = useRef(false)
 
   const { formattedTime, secondsLeft } = useSessionTimer({
     initialSeconds: session.seconds_remaining ?? FREE_SESSION_SECONDS,
@@ -171,24 +176,62 @@ function ActiveSessionView({
   const { state: stt, connect, startListening, stopListening, requestAI, disconnect } = useSTTSession()
 
   const progress = ((FREE_SESSION_SECONDS - secondsLeft) / FREE_SESSION_SECONDS) * 100
+  const isListening = stt.status === 'listening'
+  const isConnected = stt.status === 'connected' || isListening
+
+  // Mostrar video del stream compartido
+  useLayoutEffect(() => {
+    if (videoRef.current && stt.displayStream) {
+      videoRef.current.srcObject = stt.displayStream
+    }
+  }, [stt.displayStream])
 
   // Auto-scroll transcript
   useEffect(() => {
     transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [stt.transcriptHistory, stt.currentTranscript])
 
-  // Connect to backend when component mounts
+  // Conectar WebSocket y auto-iniciar con stream compartido si viene del wizard
   useEffect(() => {
-    async function initConnection() {
+    async function init() {
       const supabase = createClient()
       const { data } = await supabase.auth.getSession()
       const token = data.session?.access_token ?? ''
-      const lang = session.language ?? 'es'
+
+      // Leer config guardada por el wizard
+      const storedConfig = sessionStorage.getItem(`listnr_config_${session.id}`)
+      const cfg = storedConfig ? JSON.parse(storedConfig) : null
+      const lang = cfg?.language ?? session.language ?? 'es'
+
       await connect(token, lang)
+
+      // Si el wizard pasó un stream, usarlo para auto-iniciar
+      const sharedStream = consumeSharedStream()
+      if (sharedStream) {
+        await startListening('system', sharedStream)
+        setShowAI(true)
+      }
     }
-    initConnection()
+    init()
     return () => disconnect()
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Resizable divider
+  useEffect(() => {
+    function onMove(e: MouseEvent) {
+      if (!dragging.current || !containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      const pct = ((e.clientX - rect.left) / rect.width) * 100
+      setLeftPct(Math.max(25, Math.min(75, pct)))
+    }
+    function onUp() { dragging.current = false }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
   }, [])
 
   if (expired) {
@@ -203,23 +246,17 @@ function ActiveSessionView({
     )
   }
 
-  const isListening = stt.status === 'listening'
-  const isConnected = stt.status === 'connected' || isListening
-  const hasAIResponse = stt.currentAIResponse.length > 0
-
   return (
-    <div className="max-w-3xl space-y-4">
-      {/* Header row */}
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full -m-8" style={{ minHeight: 'calc(100vh - 0px)' }}>
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-white shrink-0">
         <div className="flex items-center gap-3">
           <Badge className="gap-1.5 bg-green-100 text-green-700 border-green-200 animate-pulse">
-            <Radio className="w-3 h-3" />
-            EN VIVO
+            <Radio className="w-3 h-3" /> EN VIVO
           </Badge>
           {isListening && (
             <Badge className="gap-1.5 bg-red-100 text-red-600 border-red-200 animate-pulse">
-              <Mic className="w-3 h-3" />
-              Escuchando
+              <Mic className="w-3 h-3" /> Escuchando
             </Badge>
           )}
           {stt.status === 'connecting' && (
@@ -227,204 +264,202 @@ function ActiveSessionView({
               <Loader2 className="w-3 h-3 animate-spin" /> Conectando...
             </span>
           )}
+          <span className="text-xs text-gray-500 hidden sm:block">
+            {session.company} — {session.job_title}
+          </span>
         </div>
-        <span className="text-3xl font-bold tabular-nums text-gray-800">{formattedTime}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-2xl font-bold tabular-nums text-gray-800">{formattedTime}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-red-200 text-red-600 hover:bg-red-50 text-xs"
+            onClick={() => { disconnect(); onEnd() }}
+            disabled={ending}
+          >
+            {ending ? 'Finalizando...' : 'Finalizar'}
+          </Button>
+        </div>
       </div>
 
-      {/* Error banner */}
+      {/* ── Banners ── */}
       {stt.error && (
-        <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-2 text-sm text-red-600">
+        <div className="px-5 py-2 text-sm text-red-600 bg-red-50 border-b border-red-100 shrink-0">
           {stt.error}
         </div>
       )}
-
-      {/* Out of credits */}
       {stt.status === 'out_of_credits' && (
-        <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-700">
-          Sin créditos disponibles. <a href="/billing" className="font-medium underline">Adquirí más créditos</a>
+        <div className="px-5 py-2 text-sm text-amber-700 bg-amber-50 border-b border-amber-100 shrink-0">
+          Sin créditos. <a href="/billing" className="font-medium underline">Adquirí más créditos</a>
         </div>
       )}
 
-      {/* Main 2-col layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* ── Main panels ── */}
+      <div ref={containerRef} className="flex flex-1 overflow-hidden relative">
 
-        {/* Left — controles + transcript */}
-        <div className="space-y-4">
-          {/* Audio controls */}
-          <Card className="border border-gray-100 shadow-sm">
-            <CardContent className="py-4 space-y-3">
-              {/* Source selector */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setAudioSource('mic')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-colors ${
-                    audioSource === 'mic'
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                      : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'
-                  }`}
-                >
-                  <Mic className="w-3 h-3" /> Micrófono
-                </button>
-                <button
-                  onClick={() => setAudioSource('system')}
-                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium transition-colors ${
-                    audioSource === 'system'
-                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                      : 'bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100'
-                  }`}
-                >
-                  <Monitor className="w-3 h-3" /> Audio del sistema
-                </button>
+        {/* Panel izquierdo — video + transcript */}
+        <div
+          className="flex flex-col overflow-hidden border-r border-gray-200"
+          style={{ width: `${leftPct}%` }}
+        >
+          {/* Video del screen share */}
+          <div className="relative bg-gray-900 shrink-0" style={{ aspectRatio: '16/9', maxHeight: '50%' }}>
+            {stt.displayStream ? (
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                playsInline
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-white/50 px-8 text-center">
+                <Monitor className="w-10 h-10 opacity-40" />
+                <p className="text-sm">
+                  {isConnected
+                    ? 'Hacé click en "Compartir pantalla" para ver la videollamada aquí'
+                    : 'Conectando...'}
+                </p>
+                {isConnected && !isListening && (
+                  <Button
+                    size="sm"
+                    className="mt-2 text-white gap-2"
+                    style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+                    onClick={() => { startListening('system'); setShowAI(true) }}
+                  >
+                    <Monitor className="w-3.5 h-3.5" /> Compartir pantalla
+                  </Button>
+                )}
               </div>
+            )}
+          </div>
 
-              {/* Start / Stop listening */}
-              {!isListening ? (
-                <Button
-                  className="w-full text-white gap-2"
-                  style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
-                  onClick={() => startListening(audioSource)}
-                  disabled={!isConnected || stt.status === 'out_of_credits'}
-                >
-                  <Mic className="w-4 h-4" />
-                  Iniciar escucha
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="w-full border-gray-200 text-gray-700 gap-2"
-                  onClick={stopListening}
-                >
-                  <MicOff className="w-4 h-4" />
-                  Pausar escucha
-                </Button>
-              )}
-
-              {/* Manual AI button */}
-              <Button
-                variant="outline"
-                className="w-full border-purple-200 text-purple-700 hover:bg-purple-50 gap-2"
-                onClick={requestAI}
-                disabled={!isConnected || stt.isAIThinking}
+          {/* Controles de audio */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-white border-b border-gray-100 shrink-0">
+            {isListening ? (
+              <button
+                onClick={stopListening}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors"
               >
-                {stt.isAIThinking
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Generando respuesta...</>
-                  : <><Sparkles className="w-4 h-4" /> Pedir respuesta IA</>
-                }
-              </Button>
-            </CardContent>
-          </Card>
+                <MicOff className="w-3.5 h-3.5" /> Pausar
+              </button>
+            ) : (
+              <button
+                onClick={() => startListening('mic')}
+                disabled={!isConnected}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors disabled:opacity-40"
+              >
+                <Mic className="w-3.5 h-3.5" /> Micrófono
+              </button>
+            )}
+            <div className="flex-1" />
+            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+              <span>{formatDuration(FREE_SESSION_SECONDS - secondsLeft)}</span>
+              <span>/</span>
+              <span>10m</span>
+            </div>
+            <div className="w-24">
+              <Progress value={progress} className="h-1.5" />
+            </div>
+          </div>
 
-          {/* Session info + progress */}
-          <Card className="border border-gray-100 shadow-sm">
-            <CardContent className="py-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-0.5">Empresa</p>
-                  <p className="font-semibold text-gray-900 truncate">{session.company || '—'}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-0.5">Puesto</p>
-                  <p className="font-semibold text-gray-900 truncate">{session.job_title || '—'}</p>
-                </div>
-              </div>
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs text-gray-400">
-                  <span>Tiempo usado</span>
-                  <span>{formatDuration(FREE_SESSION_SECONDS - secondsLeft)} / 10m</span>
-                </div>
-                <Progress value={progress} className="h-1.5" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Transcript */}
-          <Card className="border border-gray-100 shadow-sm">
-            <CardHeader className="pb-2 pt-4 px-4">
-              <CardTitle className="text-sm font-medium text-gray-600">Transcripción</CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="h-40 overflow-y-auto space-y-1 text-sm">
-                {stt.transcriptHistory.length === 0 && !stt.currentTranscript && (
-                  <p className="text-gray-400 text-xs italic">
-                    {isListening ? 'Escuchando... hablá ahora' : 'Iniciá la escucha para ver la transcripción'}
-                  </p>
-                )}
-                {stt.transcriptHistory.map((entry, i) => (
-                  <p key={i} className="text-gray-700 leading-snug">{entry.text}</p>
-                ))}
-                {stt.currentTranscript && (
-                  <p className="text-gray-400 italic">{stt.currentTranscript}</p>
-                )}
-                <div ref={transcriptEndRef} />
-              </div>
-            </CardContent>
-          </Card>
+          {/* Transcripción */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-1 bg-white">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Transcripción</p>
+            {stt.transcriptHistory.length === 0 && !stt.currentTranscript && (
+              <p className="text-xs text-gray-400 italic">
+                {isListening ? 'Escuchando...' : 'Iniciá la escucha para ver la transcripción'}
+              </p>
+            )}
+            {stt.transcriptHistory.map((entry, i) => (
+              <p key={i} className="text-sm text-gray-700 leading-relaxed">{entry.text}</p>
+            ))}
+            {stt.currentTranscript && (
+              <p className="text-sm text-gray-400 italic">{stt.currentTranscript}</p>
+            )}
+            <div ref={transcriptEndRef} />
+          </div>
         </div>
 
-        {/* Right — AI response teleprompter */}
-        <div className="flex flex-col">
-          <Card className={`flex-1 border shadow-sm transition-all duration-300 ${
-            hasAIResponse
-              ? 'border-purple-200 bg-gradient-to-br from-[#1B6CA8]/5 to-[#7B35A2]/5'
-              : 'border-gray-100'
-          }`}>
-            <CardHeader className="pb-2 pt-4 px-4">
-              <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-purple-500" />
-                Respuesta IA
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="min-h-64 flex flex-col justify-start">
-                {!hasAIResponse && !stt.isAIThinking && (
-                  <p className="text-gray-400 text-xs italic mt-2">
-                    La respuesta aparecerá aquí automáticamente cuando se detecte una pregunta,
-                    o podés pedirla manualmente.
+        {/* ── Divider arrastrable ── */}
+        <div
+          className="w-1.5 bg-gray-100 hover:bg-blue-200 cursor-col-resize flex items-center justify-center shrink-0 transition-colors"
+          onMouseDown={() => { dragging.current = true }}
+        >
+          <GripVertical className="w-3 h-3 text-gray-400" />
+        </div>
+
+        {/* Panel derecho — Respuestas IA */}
+        <div className="flex flex-col flex-1 overflow-hidden bg-white">
+          <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2 shrink-0">
+            <Sparkles className="w-4 h-4 text-purple-500" />
+            <span className="text-sm font-semibold text-gray-700">Respuestas IA</span>
+            {stt.isAIThinking && (
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400 ml-auto" />
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* Historial de respuestas */}
+            {stt.aiResponseHistory.length === 0 && !stt.isAIThinking && !stt.currentAIResponse && (
+              <p className="text-xs text-gray-400 italic">
+                Las respuestas IA aparecerán aquí. Podés pedirlas manualmente con el botón de abajo.
+              </p>
+            )}
+            {stt.aiResponseHistory.slice().reverse().map((r, i) => (
+              <div key={i} className={`rounded-xl p-4 ${i === 0 && !stt.isAIThinking ? 'bg-gradient-to-br from-[#1B6CA8]/5 to-[#7B35A2]/5 border border-purple-100' : 'bg-gray-50 border border-gray-100 opacity-60'}`}>
+                <p className={`text-sm leading-relaxed whitespace-pre-wrap ${i === 0 && !stt.isAIThinking ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+                  {r.text}
+                </p>
+              </div>
+            ))}
+            {stt.isAIThinking && (
+              <div className="rounded-xl p-4 bg-gradient-to-br from-[#1B6CA8]/5 to-[#7B35A2]/5 border border-purple-100">
+                {stt.currentAIResponse ? (
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-900 font-medium">
+                    {stt.currentAIResponse}
+                    <span className="inline-block w-0.5 h-4 bg-purple-500 ml-0.5 animate-pulse align-middle" />
                   </p>
-                )}
-                {stt.isAIThinking && !stt.currentAIResponse && (
-                  <div className="flex items-center gap-2 text-purple-500 mt-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-sm">Generando respuesta...</span>
+                ) : (
+                  <div className="flex items-center gap-2 text-purple-500 text-sm">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Generando respuesta...
                   </div>
                 )}
-                {stt.currentAIResponse && (
-                  <p className="text-gray-900 text-base leading-relaxed font-medium whitespace-pre-wrap">
-                    {stt.currentAIResponse}
-                    {stt.isAIThinking && (
-                      <span className="inline-block w-1 h-4 bg-purple-500 ml-0.5 animate-pulse align-middle" />
-                    )}
-                  </p>
-                )}
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Previous AI responses */}
-          {stt.aiResponseHistory.length > 1 && (
-            <div className="mt-3 space-y-2">
-              <p className="text-xs text-gray-400 font-medium uppercase tracking-wide">Respuestas anteriores</p>
-              {stt.aiResponseHistory.slice(0, -1).reverse().slice(0, 2).map((r, i) => (
-                <Card key={i} className="border border-gray-100 opacity-60">
-                  <CardContent className="py-3 px-4">
-                    <p className="text-xs text-gray-600 line-clamp-3">{r.text}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Finalizar */}
-      <Button
-        variant="outline"
-        className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
-        onClick={() => { disconnect(); onEnd() }}
-        disabled={ending}
-      >
-        {ending ? 'Finalizando...' : 'Finalizar sesión'}
-      </Button>
+      {/* ── Botón flotante Respuestas IA ── */}
+      {!showAI && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
+          <button
+            onClick={() => { setShowAI(true); requestAI() }}
+            disabled={!isConnected || stt.isAIThinking}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 disabled:opacity-40"
+            style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+          >
+            <Sparkles className="w-4 h-4" />
+            Respuestas IA
+          </button>
+        </div>
+      )}
+      {showAI && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10">
+          <button
+            onClick={requestAI}
+            disabled={!isConnected || stt.isAIThinking}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold text-white shadow-lg transition-all hover:scale-105 disabled:opacity-40"
+            style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+          >
+            {stt.isAIThinking
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Generando...</>
+              : <><Sparkles className="w-4 h-4" /> Pedir respuesta IA</>
+            }
+          </button>
+        </div>
+      )}
     </div>
   )
 }

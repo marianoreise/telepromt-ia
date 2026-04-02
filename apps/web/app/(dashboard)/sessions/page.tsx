@@ -85,14 +85,24 @@ export default function SessionsPage() {
             Continuar sesión activa
           </Button>
         ) : (
-          <Button
-            onClick={() => setModalOpen(true)}
-            className="gap-2 text-white"
-            style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
-          >
-            <Plus className="w-4 h-4" />
-            Nueva sesión
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setModalOpen(true)}
+              className="gap-2 border-gray-200 text-gray-700 hover:bg-gray-50"
+            >
+              <Plus className="w-4 h-4" />
+              Sesión gratuita
+            </Button>
+            <Button
+              onClick={() => setModalOpen(true)}
+              className="gap-2 text-white"
+              style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+            >
+              <Plus className="w-4 h-4" />
+              Nueva sesión
+            </Button>
+          </div>
         )}
       </div>
 

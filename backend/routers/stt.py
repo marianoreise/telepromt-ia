@@ -80,6 +80,7 @@ async def stt_endpoint(ws: WebSocket) -> None:
         try:
             user_id, _email = _verify_token(token)
         except ValueError as exc:
+            logger.error("Token verification failed: %s", exc)
             await ws.send_json({"type": "error", "message": str(exc)})
             await ws.close(code=4001)
             return

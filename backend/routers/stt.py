@@ -78,18 +78,20 @@ async def stt_endpoint(ws: WebSocket) -> None:
         forced_lang = handshake.get("language")
 
         try:
-            # Validar token via HTTP directo a Supabase (evita PyJWT que no soporta ES256)
+            # v4 — Validar token via HTTP async directo a Supabase (no usa PyJWT)
+            logger.info("STT_AUTH_V4: validando token via Supabase REST")
             import httpx as _httpx
-            resp = _httpx.get(
-                f"{SUPABASE_URL}/auth/v1/user",
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "apikey": SUPABASE_SERVICE_KEY,
-                },
-                timeout=10,
-            )
+            async with _httpx.AsyncClient(timeout=10) as _client:
+                resp = await _client.get(
+                    f"{SUPABASE_URL}/auth/v1/user",
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "apikey": SUPABASE_SERVICE_KEY,
+                    },
+                )
+            logger.info("STT_AUTH_V4: Supabase respondio HTTP %s", resp.status_code)
             if resp.status_code != 200:
-                raise ValueError(f"Token inválido (HTTP {resp.status_code})")
+                raise ValueError(f"Token inválido (HTTP {resp.status_code}: {resp.text[:100]})")
             user_data = resp.json()
             user_id = str(user_data["id"])
             _email = user_data.get("email", "")

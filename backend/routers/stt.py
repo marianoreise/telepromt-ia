@@ -36,9 +36,6 @@ router = APIRouter(prefix="/ws", tags=["stt"])
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
-
 FREE_SESSION_SECONDS = 600  # 10 minutes for zero-balance users
 FREE_WARN_SECONDS = 30       # warn 30 seconds before expiry
 
@@ -73,12 +70,16 @@ async def stt_endpoint(ws: WebSocket) -> None:
     free_limit_task: asyncio.Task | None = None
     user_id: str | None = None
 
+    full_transcript: list[str] = []  # inicializar antes del try para que finally lo vea
+    db_session_id: str | None = None  # ID real de la sesión en la DB
+
     try:
         # ── 1. Auth handshake ────────────────────────────────────────────────
         raw = await asyncio.wait_for(ws.receive_text(), timeout=10.0)
         handshake = json.loads(raw)
         token = handshake.get("token", "")
         forced_lang = handshake.get("language")
+        db_session_id = handshake.get("session_id") or None  # ID real de la sesión en DB
         session_company = handshake.get("company", "")
         session_job_title = handshake.get("job_title", "")
         session_extra_context = handshake.get("extra_context", "")
@@ -148,7 +149,6 @@ async def stt_endpoint(ws: WebSocket) -> None:
 
         # ── 4. Background task: pipe Deepgram transcripts → WS + trigger AI ─
         last_transcript: list[str] = ['']  # mutable container para compartir entre tareas
-        full_transcript: list[str] = []   # acumula todos los chunks finales
 
         async def process_transcripts() -> None:
             async for result in dg_session.transcripts():
@@ -233,17 +233,25 @@ async def stt_endpoint(ws: WebSocket) -> None:
         except Exception:
             pass
 
-        # Guardar transcripción acumulada en la sesión
-        if full_transcript and session_id:
+        # Guardar transcripción acumulada en la sesión (usa httpx para evitar 403 del SDK)
+        if full_transcript and db_session_id:
             try:
+                import httpx as _httpx
                 transcript_text = "\n".join(full_transcript)
-                db = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
-                db.from_("sessions").update(
-                    {"transcript": transcript_text}
-                ).eq("id", session_id).execute()
-                logger.info("Transcript saved for session %s (%d chars)", session_id, len(transcript_text))
+                async with _httpx.AsyncClient(timeout=10) as _client:
+                    await _client.patch(
+                        f"{SUPABASE_URL}/rest/v1/sessions?id=eq.{db_session_id}",
+                        headers={
+                            "apikey": SUPABASE_SERVICE_KEY,
+                            "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+                            "Content-Type": "application/json",
+                            "Prefer": "return=minimal",
+                        },
+                        json={"transcript": transcript_text},
+                    )
+                logger.info("Transcript saved for session %s (%d chars)", db_session_id, len(transcript_text))
             except Exception as exc:
-                logger.warning("Failed to save transcript for session %s: %s", session_id, exc)
+                logger.warning("Failed to save transcript for session %s: %s", db_session_id, exc)
 
         logger.info("Session %s closed (user=%s)", session_id, user_id)
 
@@ -260,7 +268,7 @@ async def _stream_ai_to_ws(
 ) -> None:
     """Stream AI response chunks to WebSocket client."""
     try:
-        await ws.send_json({"type": "ai_start"})
+        await ws.send_json({"type": "ai_start", "question": question})
         async for chunk in stream_ai_response(
             user_id, question, language, company, job_title, extra_context, ai_model
         ):

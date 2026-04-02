@@ -34,6 +34,7 @@ export interface TranscriptEntry {
 }
 
 export interface AIResponseEntry {
+  question: string
   text: string
   timestamp: number
 }
@@ -43,6 +44,7 @@ export interface STTSessionState {
   currentTranscript: string
   transcriptHistory: TranscriptEntry[]
   currentAIResponse: string
+  currentAIQuestion: string
   aiResponseHistory: AIResponseEntry[]
   isAIThinking: boolean
   balance: number | null
@@ -56,6 +58,7 @@ const INITIAL_STATE: STTSessionState = {
   currentTranscript: '',
   transcriptHistory: [],
   currentAIResponse: '',
+  currentAIQuestion: '',
   aiResponseHistory: [],
   isAIThinking: false,
   balance: null,
@@ -83,6 +86,7 @@ export function useSTTSession() {
       token: string,
       language: string,
       sessionConfig?: {
+        session_id?: string
         company?: string
         job_title?: string
         extra_context?: string
@@ -128,7 +132,7 @@ export function useSTTSession() {
             }
           } else if (msg.type === 'ai_start') {
             aiBufferRef.current = ''
-            updateState({ isAIThinking: true, currentAIResponse: '' })
+            updateState({ isAIThinking: true, currentAIResponse: '', currentAIQuestion: (msg.question as string) || '' })
           } else if (msg.type === 'ai_chunk') {
             aiBufferRef.current += msg.chunk as string
             updateState({ currentAIResponse: aiBufferRef.current })
@@ -140,7 +144,7 @@ export function useSTTSession() {
               currentAIResponse: full,
               aiResponseHistory: [
                 ...prev.aiResponseHistory,
-                { text: full, timestamp: Date.now() },
+                { question: prev.currentAIQuestion, text: full, timestamp: Date.now() },
               ],
             }))
             aiBufferRef.current = ''

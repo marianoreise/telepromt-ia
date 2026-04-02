@@ -204,6 +204,7 @@ function ActiveSessionView({
       const lang = cfg?.language ?? session.language ?? 'es'
 
       await connect(token, lang, {
+        session_id: session.id,
         company: cfg?.company ?? session.company ?? '',
         job_title: cfg?.jobTitle ?? session.job_title ?? '',
         extra_context: cfg?.extraContext ?? '',
@@ -405,34 +406,54 @@ function ActiveSessionView({
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-16">
             {/* Historial de respuestas */}
             {stt.aiResponseHistory.length === 0 && !stt.isAIThinking && !stt.currentAIResponse && (
               <p className="text-xs text-gray-400 italic">
                 Las respuestas IA aparecerán aquí. Podés pedirlas manualmente con el botón de abajo.
               </p>
             )}
-            {stt.aiResponseHistory.slice().reverse().map((r, i) => (
-              <div key={i} className={`rounded-xl p-4 ${i === 0 && !stt.isAIThinking ? 'bg-gradient-to-br from-[#1B6CA8]/5 to-[#7B35A2]/5 border border-purple-100' : 'bg-gray-50 border border-gray-100 opacity-60'}`}>
-                <p className={`text-sm leading-relaxed whitespace-pre-wrap ${i === 0 && !stt.isAIThinking ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
-                  {r.text}
-                </p>
-              </div>
-            ))}
+            {/* Respuesta en curso */}
             {stt.isAIThinking && (
-              <div className="rounded-xl p-4 bg-gradient-to-br from-[#1B6CA8]/5 to-[#7B35A2]/5 border border-purple-100">
-                {stt.currentAIResponse ? (
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-900 font-medium">
-                    {stt.currentAIResponse}
-                    <span className="inline-block w-0.5 h-4 bg-purple-500 ml-0.5 animate-pulse align-middle" />
-                  </p>
-                ) : (
-                  <div className="flex items-center gap-2 text-purple-500 text-sm">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Generando respuesta...
+              <div className="rounded-xl p-4 bg-gradient-to-br from-[#1B6CA8]/5 to-[#7B35A2]/5 border border-purple-100 space-y-2">
+                {stt.currentAIQuestion && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#1B6CA8] mb-0.5">Pregunta</p>
+                    <p className="text-xs text-gray-500 leading-relaxed italic">{stt.currentAIQuestion}</p>
                   </div>
                 )}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#7B35A2] mb-0.5">Respuesta</p>
+                  {stt.currentAIResponse ? (
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap text-gray-900 font-medium">
+                      {stt.currentAIResponse}
+                      <span className="inline-block w-0.5 h-4 bg-purple-500 ml-0.5 animate-pulse align-middle" />
+                    </p>
+                  ) : (
+                    <div className="flex items-center gap-2 text-purple-500 text-sm">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Generando respuesta...
+                    </div>
+                  )}
+                </div>
               </div>
             )}
+            {/* Historial previo */}
+            {stt.aiResponseHistory.slice().reverse().map((r, i) => (
+              <div key={i} className={`rounded-xl p-4 space-y-2 ${i === 0 && !stt.isAIThinking ? 'bg-gradient-to-br from-[#1B6CA8]/5 to-[#7B35A2]/5 border border-purple-100' : 'bg-gray-50 border border-gray-100 opacity-60'}`}>
+                {r.question && (
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[#1B6CA8] mb-0.5">Pregunta</p>
+                    <p className="text-xs text-gray-500 leading-relaxed italic">{r.question}</p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#7B35A2] mb-0.5">Respuesta</p>
+                  <p className={`text-sm leading-relaxed whitespace-pre-wrap ${i === 0 && !stt.isAIThinking ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+                    {r.text}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -548,26 +569,17 @@ function EndedSessionView({
           onClick={onBack}
           className="flex-1"
         >
-          Dashboard
+          Mis sesiones
         </Button>
-        {session.transcript && (
-          <Button
-            onClick={() => setShowTranscript(v => !v)}
-            className="flex-1 text-white gap-2"
-            style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
-          >
-            {showTranscript ? 'Ocultar transcripción' : 'Ver transcripción'}
-          </Button>
-        )}
-        {!session.transcript && (
-          <Button
-            onClick={() => router.push('/sessions')}
-            className="flex-1 text-white gap-2"
-            style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
-          >
-            Nueva sesión
-          </Button>
-        )}
+        <Button
+          onClick={() => setShowTranscript(v => !v)}
+          disabled={!session.transcript}
+          className="flex-1 text-white gap-2 disabled:opacity-40"
+          style={{ background: 'linear-gradient(135deg, #1B6CA8 0%, #7B35A2 100%)' }}
+          title={!session.transcript ? 'No hay transcripción guardada para esta sesión' : undefined}
+        >
+          {showTranscript ? 'Ocultar transcripción' : 'Transcripción'}
+        </Button>
       </div>
 
       {/* Transcripción expandible */}
@@ -577,8 +589,8 @@ function EndedSessionView({
             <CardTitle className="text-base">Transcripción</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="max-h-96 overflow-y-auto pr-1">
-              {session.transcript.split('\n').map((line, i) => (
+            <div className="max-h-96 overflow-y-auto pr-1 pb-2">
+              {session.transcript.split('\n').filter(Boolean).map((line, i) => (
                 <p key={i} className="text-sm text-gray-700 leading-relaxed mb-1">{line}</p>
               ))}
             </div>

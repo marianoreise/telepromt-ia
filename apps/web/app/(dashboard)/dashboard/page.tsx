@@ -9,15 +9,19 @@ async function getUserData() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const [profileRes, creditsRes] = await Promise.all([
+  const [profileRes, creditsRes, knowledgeRes, sessionsRes] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('user_id', user.id).single(),
     supabase.from('user_credits').select('balance').eq('user_id', user.id).single(),
+    supabase.from('knowledge_chunks').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+    supabase.from('sessions').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
   ])
 
   return {
     user,
     profile: profileRes.data,
     balance: creditsRes.data?.balance ?? 0,
+    hasKnowledge: (knowledgeRes.count ?? 0) > 0,
+    hasSessions: (sessionsRes.count ?? 0) > 0,
   }
 }
 
@@ -49,16 +53,17 @@ export default async function DashboardPage({
   const data = await getUserData()
   if (!data) return null
 
-  const { user, profile, balance } = data
+  const { user, profile, balance, hasKnowledge, hasSessions } = data
   const displayName = profile?.display_name ?? user.email?.split('@')[0] ?? 'Usuario'
-  const onboardingStep = profile?.onboarding_step ?? 0
   const minutesLeft = Math.round(Number(balance) * 30)
 
+  const profileDone = !!(profile?.display_name?.trim() && profile?.role?.trim())
   const STEPS = [
-    { label: 'Completar perfil', href: '/settings', done: onboardingStep >= 1 },
-    { label: 'Subir CV / Resume', href: '/knowledge', done: onboardingStep >= 2 },
-    { label: 'Iniciar primera sesión', href: '/sessions', done: onboardingStep >= 3 },
+    { label: 'Completar perfil', href: '/settings', done: profileDone },
+    { label: 'Subir CV / Resume', href: '/knowledge', done: hasKnowledge },
+    { label: 'Sesiones realizadas', href: '/sessions', done: hasSessions },
   ]
+  const allDone = profileDone && hasKnowledge && hasSessions
 
   return (
     <div className="max-w-4xl space-y-8">
@@ -125,7 +130,7 @@ export default async function DashboardPage({
       </div>
 
       {/* Onboarding */}
-      {onboardingStep < 3 && (
+      {!allDone && (
         <Card className="border border-gray-100 shadow-sm">
           <CardHeader className="pb-4">
             <CardTitle className="text-base font-semibold">Primeros pasos</CardTitle>
@@ -141,7 +146,7 @@ export default async function DashboardPage({
                 <span className={`text-sm flex-1 ${step.done ? 'line-through text-gray-400' : 'text-gray-700 font-medium'}`}>
                   {step.label}
                 </span>
-                {!step.done && i === onboardingStep && (
+                {!step.done && (
                   <a
                     href={step.href}
                     className="inline-flex items-center h-7 rounded-lg border border-gray-200 px-3 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"

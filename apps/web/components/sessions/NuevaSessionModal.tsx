@@ -383,40 +383,17 @@ export default function NuevaSessionModal({ open, onOpenChange, onSessionCreated
             </div>
 
             <div className="space-y-1.5">
-              <Label>Modelo IA</Label>
-              <div className="space-y-2">
-                {(
-                  [
-                    { value: 'claude-sonnet-4-5', label: 'Claude Sonnet', desc: 'Recomendado — respuestas más precisas' },
-                    { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku', desc: 'Rápido — menor latencia' },
-                  ] as const
-                ).map(m => (
-                  <button
-                    key={m.value}
-                    type="button"
-                    onClick={() => update({ aiModel: m.value })}
-                    className={`w-full flex items-start gap-3 p-3 rounded-lg border text-left transition-colors ${
-                      config.aiModel === m.value
-                        ? 'border-blue-300 bg-blue-50'
-                        : 'border-gray-200 bg-white hover:bg-gray-50'
-                    }`}
-                  >
-                    <div
-                      className={`mt-0.5 w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                        config.aiModel === m.value ? 'border-blue-600' : 'border-gray-300'
-                      }`}
-                    >
-                      {config.aiModel === m.value && (
-                        <div className="w-2 h-2 rounded-full bg-blue-600" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{m.label}</p>
-                      <p className="text-xs text-gray-500">{m.desc}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              <Label htmlFor="ai-model-select">Modelo IA</Label>
+              <select
+                id="ai-model-select"
+                value={config.aiModel}
+                onChange={e => update({ aiModel: e.target.value })}
+                className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1B6CA8]"
+              >
+                <option value="claude-sonnet-4-5">Claude Sonnet — Recomendado, respuestas más precisas</option>
+                <option value="claude-haiku-4-5-20251001">Claude Haiku — Rápido, menor latencia</option>
+                <option value="gemini-2.0-flash">Gemini Flash — Google, menor costo por token</option>
+              </select>
             </div>
           </div>
         )

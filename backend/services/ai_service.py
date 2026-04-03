@@ -1,9 +1,10 @@
-"""AI response generation with Claude + optional RAG context."""
+"""AI response generation with Claude / Gemini + optional RAG context."""
 import os
 import logging
 from typing import AsyncGenerator
 
 import anthropic
+import google.generativeai as genai
 from openai import AsyncOpenAI
 from supabase import create_client, Client
 
@@ -11,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
@@ -117,6 +119,34 @@ async def _retrieve_context(user_id: str, query: str) -> str:
         return ""
 
 
+async def _stream_gemini(
+    model_name: str,
+    system_prompt: str,
+    user_message: str,
+) -> AsyncGenerator[str, None]:
+    """Stream response from Google Gemini."""
+    if not GOOGLE_API_KEY:
+        yield "Error: GOOGLE_API_KEY no configurada en el servidor."
+        return
+    try:
+        genai.configure(api_key=GOOGLE_API_KEY)
+        model = genai.GenerativeModel(
+            model_name=model_name,
+            system_instruction=system_prompt,
+        )
+        response = await model.generate_content_async(
+            user_message,
+            stream=True,
+            generation_config=genai.types.GenerationConfig(max_output_tokens=512),
+        )
+        async for chunk in response:
+            if chunk.text:
+                yield chunk.text
+    except Exception as exc:
+        logger.error("Gemini API error: %s", exc)
+        yield "Error al generar respuesta. Por favor intentá de nuevo."
+
+
 async def stream_ai_response(
     user_id: str,
     question: str,
@@ -127,7 +157,8 @@ async def stream_ai_response(
     ai_model: str = "",
 ) -> AsyncGenerator[str, None]:
     """
-    Stream Claude response for a given question.
+    Stream AI response for a given question.
+    Routes to Claude (Anthropic) or Gemini (Google) based on model name prefix.
     Retrieves RAG context from user's knowledge base first.
     Yields text chunks as they arrive.
     """
@@ -142,6 +173,11 @@ async def stream_ai_response(
 
     model = ai_model if ai_model else CLAUDE_MODEL
     system_prompt = _build_system_prompt(company, job_title, extra_context)
+
+    if model.startswith("gemini"):
+        async for chunk in _stream_gemini(model, system_prompt, user_message):
+            yield chunk
+        return
 
     try:
         async with _get_anthropic().messages.stream(

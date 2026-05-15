@@ -144,7 +144,7 @@ async def _stream_gemini(
                 yield chunk.text
     except Exception as exc:
         logger.error("Gemini API error: %s", exc)
-        yield "Error al generar respuesta. Por favor intentá de nuevo."
+        yield f"[ERROR Gemini/{model_name}] {type(exc).__name__}: {exc}"
 
 
 async def stream_ai_response(

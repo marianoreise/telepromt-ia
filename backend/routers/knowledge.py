@@ -4,7 +4,6 @@ import logging
 import os
 from typing import Annotated
 
-import pdfplumber
 import mammoth
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -28,22 +27,16 @@ def _get_supabase():
 
 
 def _extract_text(filename: str, content: bytes) -> str:
-    """Extract plain text from PDF or DOCX."""
-    if filename.lower().endswith(".pdf"):
-        text_parts = []
-        with pdfplumber.open(io.BytesIO(content)) as pdf:
-            for page in pdf.pages:
-                text = page.extract_text()
-                if text:
-                    text_parts.append(text)
-        return "\n\n".join(text_parts)
-
+    """Extract plain text from DOCX or TXT."""
     if filename.lower().endswith((".docx", ".doc")):
         result = mammoth.extract_raw_text(io.BytesIO(content))
         return result.value
 
     if filename.lower().endswith(".txt"):
         return content.decode("utf-8", errors="replace")
+
+    if filename.lower().endswith(".pdf"):
+        raise ValueError("Los archivos PDF no son compatibles. Exportá tu CV como DOCX desde Word o Google Docs.")
 
     raise ValueError(f"Formato no soportado: {filename}")
 
@@ -90,23 +83,37 @@ async def upload_document(
     source_name = file.filename or "documento"
     db = _get_supabase()
 
+    import asyncio
+    
     # Remove old chunks for this source
     db.from_("knowledge_chunks").delete().eq("user_id", user.id).eq("source_name", source_name).execute()
 
-    # Embed and insert each chunk
+    # Create embed tasks
+    embed_tasks = [_embed_text(chunk) for chunk in chunks]
+    embeddings = await asyncio.gather(*embed_tasks, return_exceptions=True)
+
+    # Prepare batch
+    records = []
+    for chunk, embedding in zip(chunks, embeddings):
+        if isinstance(embedding, Exception):
+            logger.warning("Chunk embedding failed: %s", embedding)
+            continue
+        records.append({
+            "user_id": user.id,
+            "source_name": source_name,
+            "content": chunk,
+            "embedding": embedding,
+        })
+
     inserted = 0
-    for chunk in chunks:
+    if records:
         try:
-            embedding = await _embed_text(chunk)
-            db.from_("knowledge_chunks").insert({
-                "user_id": user.id,
-                "source_name": source_name,
-                "content": chunk,
-                "embedding": embedding,
-            }).execute()
-            inserted += 1
+            # Batch insert
+            # Supabase Python client supports inserting lists of dicts
+            res = db.from_("knowledge_chunks").insert(records).execute()
+            inserted = len(res.data) if res.data else 0
         except Exception as exc:
-            logger.warning("Chunk embedding failed: %s", exc)
+            logger.error("Bulk insert failed: %s", exc)
 
     if inserted == 0:
         raise HTTPException(status_code=500, detail="Error al indexar el documento")

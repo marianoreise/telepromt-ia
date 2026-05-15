@@ -16,7 +16,7 @@ GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GOOGLE_GENE
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
-CLAUDE_MODEL = "gemini-1.5-flash"
+CLAUDE_MODEL = "gpt-4o-mini"
 EMBED_MODEL = "text-embedding-3-small"
 EMBED_DIMS = 1536
 TOP_K = 4
@@ -158,7 +158,7 @@ async def stream_ai_response(
 ) -> AsyncGenerator[str, None]:
     """
     Stream AI response for a given question.
-    Routes to Claude (Anthropic) or Gemini (Google) based on model name prefix.
+    Routes to OpenAI (gpt-*), Gemini (gemini-*) or Claude based on model name prefix.
     Retrieves RAG context from user's knowledge base first.
     Yields text chunks as they arrive.
     """
@@ -174,11 +174,34 @@ async def stream_ai_response(
     model = ai_model if ai_model else CLAUDE_MODEL
     system_prompt = _build_system_prompt(company, job_title, extra_context)
 
+    # --- OpenAI (gpt-*) ---
+    if model.startswith("gpt") or model.startswith("o1") or model.startswith("o3"):
+        try:
+            stream = await _get_openai().chat.completions.create(
+                model=model,
+                max_tokens=512,
+                stream=True,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_message},
+                ],
+            )
+            async for chunk in stream:
+                delta = chunk.choices[0].delta.content
+                if delta:
+                    yield delta
+        except Exception as exc:
+            logger.error("OpenAI API error: %s", exc)
+            yield "Error al generar respuesta. Por favor intentá de nuevo."
+        return
+
+    # --- Gemini ---
     if model.startswith("gemini"):
         async for chunk in _stream_gemini(model, system_prompt, user_message):
             yield chunk
         return
 
+    # --- Anthropic / Claude ---
     try:
         async with _get_anthropic().messages.stream(
             model=model,

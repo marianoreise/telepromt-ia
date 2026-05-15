@@ -228,8 +228,8 @@ export default function NuevaSessionModal({ open, onOpenChange, onSessionCreated
         role="switch"
         aria-checked={value}
         onClick={onChange}
-        className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          value ? 'bg-blue-600' : 'bg-gray-300'
+        className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#1B6CA8] focus:ring-offset-2 ${
+          value ? 'bg-[#1B6CA8]' : 'bg-gray-300'
         }`}
       >
         <span
@@ -390,9 +390,11 @@ export default function NuevaSessionModal({ open, onOpenChange, onSessionCreated
                 onChange={e => update({ aiModel: e.target.value })}
                 className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#1B6CA8]"
               >
-                <option value="claude-sonnet-4-5">Claude Sonnet — Recomendado, respuestas más precisas</option>
-                <option value="claude-haiku-4-5-20251001">Claude Haiku — Rápido, menor latencia</option>
-                <option value="gemini-2.0-flash">Gemini Flash — Google, menor costo por token</option>
+                <option value="gpt-4o-mini">GPT-4o Mini — Recomendado, rápido y preciso</option>
+                <option value="gpt-4o">GPT-4o — Más potente, mayor calidad</option>
+                <option value="claude-3-5-sonnet-20241022">Claude Sonnet 3.5 — Alta calidad, respuestas naturales</option>
+                <option value="claude-3-5-haiku-20241022">Claude Haiku 3.5 — Rápido, menor latencia</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash — Google, menor costo por token</option>
               </select>
             </div>
           </div>
@@ -561,7 +563,7 @@ export default function NuevaSessionModal({ open, onOpenChange, onSessionCreated
               <div
                 key={s}
                 className={`h-1 flex-1 rounded-full transition-colors ${
-                  i <= stepIndex ? 'bg-blue-500' : 'bg-gray-200'
+                  i <= stepIndex ? 'bg-[#1B6CA8]' : 'bg-gray-200'
                 }`}
               />
             ))}

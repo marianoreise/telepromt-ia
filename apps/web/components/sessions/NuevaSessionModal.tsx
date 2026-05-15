@@ -319,14 +319,14 @@ export default function NuevaSessionModal({ open, onOpenChange, onSessionCreated
                   <div className="space-y-2">
                     <p className="text-3xl">📎</p>
                     <p className="text-sm text-gray-500">Hacé click para seleccionar un archivo</p>
-                    <p className="text-xs text-gray-400">.PDF · .DOC · .DOCX</p>
+                    <p className="text-xs text-gray-400">.PDF · .DOCX · .TXT · .MD</p>
                   </div>
                 )}
               </div>
               <input
                 ref={fileRef}
                 type="file"
-                accept=".pdf,.doc,.docx"
+                accept=".pdf,.doc,.docx,.txt,.md"
                 className="hidden"
                 onChange={e => {
                   const file = e.target.files?.[0]

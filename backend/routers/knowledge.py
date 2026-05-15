@@ -32,7 +32,7 @@ def _extract_text(filename: str, content: bytes) -> str:
         result = mammoth.extract_raw_text(io.BytesIO(content))
         return result.value
 
-    if filename.lower().endswith(".txt"):
+    if filename.lower().endswith((".txt", ".md")):
         return content.decode("utf-8", errors="replace")
 
     if filename.lower().endswith(".pdf"):
@@ -54,7 +54,7 @@ class KnowledgeListItem(BaseModel):
 
 @router.post("/upload")
 async def upload_document(
-    file: Annotated[UploadFile, File(description="PDF, DOCX, o TXT (máx 5 MB)")],
+    file: Annotated[UploadFile, File(description="PDF, DOCX, TXT, o MD (máx 5 MB)")],
     user: UserContext = Depends(get_current_user),
 ) -> dict:
     """Upload a document to the user's knowledge base."""

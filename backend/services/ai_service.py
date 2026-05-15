@@ -16,7 +16,7 @@ GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "")
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
-CLAUDE_MODEL = "claude-sonnet-4-5"
+CLAUDE_MODEL = "claude-3-5-sonnet-20241022"
 EMBED_MODEL = "text-embedding-3-small"
 EMBED_DIMS = 1536
 TOP_K = 4

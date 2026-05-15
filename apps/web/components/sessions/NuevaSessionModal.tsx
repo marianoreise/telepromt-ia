@@ -58,7 +58,7 @@ const DEFAULT_CONFIG: WizardConfig = {
   additionalDoc: null,
   language: 'es',
   extraContext: '',
-  aiModel: 'claude-sonnet-4-5',
+  aiModel: 'gpt-4o-mini',
   autoGenerate: true,
   saveTranscript: true,
 }

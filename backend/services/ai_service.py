@@ -44,8 +44,17 @@ def _build_system_prompt(
     company: str = "",
     job_title: str = "",
     extra_context: str = "",
+    language: str = "es",
 ) -> str:
     parts = [_BASE_SYSTEM_PROMPT]
+    
+    if language == "en":
+        parts.append("\nCRÍTICO / CRITICAL: La entrevista es en INGLÉS. DEBES responder exclusivamente en INGLÉS. / The interview is in ENGLISH. You MUST answer entirely in ENGLISH.")
+    elif language == "es-en":
+        parts.append("\nCRÍTICO: La entrevista es mixta (Inglés/Español). Respondé en el MISMO IDIOMA en el que se te hace la pregunta.")
+    else:
+        parts.append("\nCRÍTICO: La entrevista es en ESPAÑOL. DEBES responder exclusivamente en ESPAÑOL.")
+
     if company or job_title:
         parts.append(
             f"\nContexto de la entrevista: el candidato está entrevistando"
@@ -172,7 +181,7 @@ async def stream_ai_response(
         )
 
     model = ai_model if ai_model else CLAUDE_MODEL
-    system_prompt = _build_system_prompt(company, job_title, extra_context)
+    system_prompt = _build_system_prompt(company, job_title, extra_context, language)
 
     # --- OpenAI (gpt-*) ---
     if model.startswith("gpt") or model.startswith("o1") or model.startswith("o3"):

@@ -6,11 +6,14 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { FileText, FileType2, AlertTriangle, ChevronDown, AlertCircle } from 'lucide-react'
 
-const ALLOWED_EXTENSIONS = ['.docx', '.doc', '.txt']
+const ALLOWED_EXTENSIONS = ['.docx', '.doc', '.txt', '.md']
 const ALLOWED_MIME = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/msword',
   'text/plain',
+  'text/markdown',
+  'text/x-markdown',
+  '', // Some browsers send empty MIME type for .md files
 ]
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? ''

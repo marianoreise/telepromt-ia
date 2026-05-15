@@ -192,7 +192,7 @@ async def stream_ai_response(
                     yield delta
         except Exception as exc:
             logger.error("OpenAI API error: %s", exc)
-            yield "Error al generar respuesta. Por favor intentá de nuevo."
+            yield f"[ERROR OpenAI/{model}] {type(exc).__name__}: {exc}"
         return
 
     # --- Gemini ---
@@ -213,7 +213,10 @@ async def stream_ai_response(
                 yield text
     except anthropic.APIError as exc:
         logger.error("Anthropic API error: %s", exc)
-        yield "Error al generar respuesta. Por favor intentá de nuevo."
+        yield f"[ERROR Anthropic/{model}] {type(exc).__name__}: {exc}"
+    except Exception as exc:
+        logger.error("Anthropic unexpected error: %s", exc)
+        yield f"[ERROR Anthropic/{model}] {type(exc).__name__}: {exc}"
 
 
 def is_question(text: str) -> bool:

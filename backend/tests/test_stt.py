@@ -3,7 +3,27 @@ import json
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 
-from services.ai_service import is_question
+from services.ai_service import is_question, pick_manual_ai_question
+
+
+# ── pick_manual_ai_question (Pedir respuesta IA) ─────────────────────────────
+
+class TestPickManualAiQuestion:
+    def test_prefers_override(self):
+        assert pick_manual_ai_question("  override  ", "¿Q?", "last") == "override"
+
+    def test_prefers_last_question_over_last_final(self):
+        assert pick_manual_ai_question(
+            None,
+            "What techniques can you use to perform estimations in scrum projects?",
+            "Sample answer",
+        ) == "What techniques can you use to perform estimations in scrum projects?"
+
+    def test_falls_back_to_last_final(self):
+        assert pick_manual_ai_question(None, "", "Just a statement") == "Just a statement"
+
+    def test_empty(self):
+        assert pick_manual_ai_question(None, "", "") == ""
 
 
 # ── is_question heuristic ─────────────────────────────────────────────────────
@@ -41,6 +61,9 @@ class TestIsQuestion:
 
     def test_describe(self):
         assert is_question("Describe a challenging situation you faced")
+
+    def test_sample_answer_not_question(self):
+        assert not is_question("Sample answer")
 
 
 # ── WebSocket auth ────────────────────────────────────────────────────────────

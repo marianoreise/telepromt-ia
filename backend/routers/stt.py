@@ -2,8 +2,10 @@
 WebSocket endpoint for real-time STT + AI response.
 
 Protocol (client → server):
-  - First message: JSON {"token": "<supabase_jwt>", "language": "es"|"en"}
+  - First message: JSON {"token": "<supabase_jwt>", "language": "es"|"en", ...}
   - Subsequent messages: raw PCM audio bytes (16-bit, 16kHz, mono)
+  - JSON {"type": "request_ai", "question": "<opcional>"}: pedir respuesta; si
+    no se envía question, el servidor usa la última frase detectada como pregunta.
   - Text message "stop": graceful disconnect
 
 Protocol (server → client):
@@ -26,7 +28,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from supabase import create_client
 
 from services.deepgram_service import DeepgramStreamingSession
-from services.ai_service import stream_ai_response, is_question
+from services.ai_service import stream_ai_response, is_question, pick_manual_ai_question
 from services.credit_service import SessionBillingTracker, get_balance
 from services.auth_utils import verify_supabase_token
 
@@ -148,7 +150,11 @@ async def stt_endpoint(ws: WebSocket) -> None:
             free_limit_task = asyncio.create_task(_free_session_watchdog())
 
         # ── 4. Background task: pipe Deepgram transcripts → WS + trigger AI ─
-        last_transcript: list[str] = ['']  # mutable container para compartir entre tareas
+        # Última frase final (cualquiera) y última frase final que parece pregunta;
+        # sin esto, request_ai usaría solo el último fragmento (p. ej. "Sample answer"
+        # del video) y se pierde la pregunta real de la entrevista.
+        last_final: list[str] = ['']
+        last_question: list[str] = ['']
 
         async def process_transcripts() -> None:
             async for result in dg_session.transcripts():
@@ -158,11 +164,12 @@ async def stt_endpoint(ws: WebSocket) -> None:
                     "is_final": result.is_final,
                 })
 
-                # Guardar el último transcript final para request_ai manual
-                # y acumular para guardar al cerrar la sesión
+                # Guardar últimos transcripts finales y acumular para la DB
                 if result.is_final and result.text.strip():
-                    last_transcript[0] = result.text
+                    last_final[0] = result.text
                     full_transcript.append(result.text)
+                    if is_question(result.text):
+                        last_question[0] = result.text
 
                 # Trigger AI automático en speech_final con pregunta detectada
                 if session_auto_generate and result.speech_final and is_question(result.text):
@@ -201,7 +208,12 @@ async def stt_endpoint(ws: WebSocket) -> None:
                 try:
                     data = json.loads(text)
                     if data.get("type") == "request_ai":
-                        question = last_transcript[0].strip()
+                        override = data.get("question") or data.get("text")
+                        question = pick_manual_ai_question(
+                            override if isinstance(override, str) else None,
+                            last_question[0],
+                            last_final[0],
+                        )
                         if question:
                             asyncio.create_task(
                                 _stream_ai_to_ws(ws, user_id, question, language,

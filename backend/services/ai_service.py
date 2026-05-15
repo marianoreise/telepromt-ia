@@ -371,6 +371,27 @@ async def stream_ai_response(
         yield f"[ERROR Anthropic/{model}] {type(exc).__name__}: {exc}"
 
 
+def pick_manual_ai_question(
+    override: str | None,
+    last_question_snippet: str,
+    last_final_snippet: str,
+) -> str:
+    """
+    Texto a usar cuando el usuario pide respuesta IA manualmente.
+    Prioridad: override del cliente → última frase final clasificada como pregunta
+    → última frase final (comportamiento anterior).
+    """
+    if override:
+        o = override.strip()
+        if o:
+            return o
+    if last_question_snippet:
+        q = last_question_snippet.strip()
+        if q:
+            return q
+    return (last_final_snippet or "").strip()
+
+
 def is_question(text: str) -> bool:
     """
     Heuristic: detect if the final transcript is a question worth answering.

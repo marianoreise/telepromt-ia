@@ -571,7 +571,7 @@ export default function NuevaSessionModal({ open, onOpenChange, onSessionCreated
           <p className="text-xs text-gray-400">Paso {stepIndex + 1} de {STEP_ORDER.length}</p>
         </DialogHeader>
 
-        <div className="py-2 max-h-[55vh] overflow-y-auto pr-1">
+        <div className={`py-2 pr-1 ${step !== 'setup' ? 'max-h-[55vh] overflow-y-auto' : 'overflow-visible'}`}>
           {renderStep()}
           {error && <p className="text-sm text-red-500 mt-3">{error}</p>}
         </div>

@@ -13,7 +13,7 @@ router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
-FREE_SESSION_SECONDS: int = 600  # 10 minutos
+FREE_SESSION_SECONDS: int = 7200  # 120 minutos
 
 
 def _get_supabase():

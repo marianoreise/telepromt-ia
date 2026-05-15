@@ -36,7 +36,7 @@ router = APIRouter(prefix="/ws", tags=["stt"])
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 
-FREE_SESSION_SECONDS = 600  # 10 minutes for zero-balance users
+FREE_SESSION_SECONDS = 7200  # 120 minutes for zero-balance users
 FREE_WARN_SECONDS = 30       # warn 30 seconds before expiry
 
 
